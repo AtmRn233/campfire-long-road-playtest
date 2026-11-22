@@ -257,7 +257,7 @@ export function createBattle(terrain = "woods", weatherId = "clear", supplies = 
     participants.push({side:"enemy",row:unit.mount || unit.weapon?.range === "远程" ? "back" : "front",...unit});
   }
   const state = {
-    phase:"setup", round:1, winner:null, endReason:null, serial:0, rev:0, busy:false, log:[], speeches:[], lastStrike:null, pendingEnemyAttack:null, lastSide:null, lanes, weather,
+    phase:"setup", round:1, winner:null, endReason:null, serial:0, rev:0, busy:false, log:[], speeches:[], lastStrike:null, pendingEnemyAttack:null, lanes, weather,
     fallen:[], settlement:null, report:null, supplies, usedItems:{}, itemSwaps:{}, restoredMana:{}, enemyFormationEnabled:Boolean(enemies?.length),
     damageStats:Object.fromEntries(participants.filter(unit=>unit.side==="player").map(unit=>[unit.id,{name:unit.name,armor:0,hp:0,taken:0}])),
     units:participants.map((character, position) => {
@@ -330,21 +330,8 @@ export function attackOptions(state, actorId) {
 }
 
 export function orderedActors(state, side) {
-  const pending = (side) => sideUnits(state,side).filter((unit)=>active(unit) && !unit.acted)
-    .sort((a,b)=>b.initiative-a.initiative || order(a,b));
-  if (side) return pending(side);
-  const ours = pending("player"), theirs = pending("enemy");
-  const result = [];
-  let sideToAct = state.lastSide ? other(state.lastSide) :
-    ((ours[0]?.initiative ?? -Infinity) >= (theirs[0]?.initiative ?? -Infinity) ? "player" : "enemy");
-  while (ours.length || theirs.length) {
-    const preferred = sideToAct === "player" ? ours : theirs;
-    const alternate = sideToAct === "player" ? theirs : ours;
-    const next = (preferred.length ? preferred : alternate).shift();
-    result.push(next);
-    sideToAct = other(next.side);
-  }
-  return result;
+  return state.units.filter(unit=>active(unit) && !unit.acted && (!side || unit.side===side))
+    .sort((a,b)=>b.initiative-a.initiative || Number(b.side==="player")-Number(a.side==="player") || order(a,b));
 }
 
 export function armorPenetrationReduction(durability) {
@@ -537,8 +524,6 @@ function advance(state) {
   const starting = state.phase === "setup";
   if (state.phase === "reinforcement") {
     if (!startNextRound(state)) return;
-  } else if (!starting) {
-    state.lastSide = state.phase;
   }
   if (resolveDefeat(state)) return;
   if (starting) note(state,state.terrain.name + "开战。");
@@ -565,7 +550,6 @@ function advance(state) {
       return;
     }
     next.acted = true;
-    state.lastSide = next.side;
     note(state,next.name + "举着白旗愣在原地，跳过行动。","morale");
   }
 }
@@ -601,14 +585,14 @@ export function defenseFor(unit) {
   const shield = intactShield(unit);
   const attributeDodge = Math.max(0,(targetDexterity-baseAttribute)*5);
   const moraleDodge = moralePercent(unit);
-  const baseDodge = attributeDodge + moraleDodge;
+  const baseDodge = Math.max(0,attributeDodge + moraleDodge);
   const activeDodge = unit.statuses.dodge > 0 ? dodgeAfterAction(baseDodge)-baseDodge : 0;
   const shieldBonus = shield?.blockBonus ?? 0;
   const guarding = unit.statuses.defend > 0;
   const block = (baseBlock + shieldBonus) * (guarding ? 2 : 1);
   const meleeBlock = unit.weapon.range === "远程" ? 0 : block;
   const rangedBlock = shield ? block : 0;
-  return {targetDexterity,rawTargetDexterity,moraleDodge,activeDodge,baseBlock,shieldBonus,guarding,meleeBlock,rangedBlock,
+  return {targetDexterity,rawTargetDexterity,attributeDodge,baseDodge,moraleDodge,activeDodge,baseBlock,shieldBonus,guarding,meleeBlock,rangedBlock,
     dodge:baseDodge + activeDodge};
 }
 
@@ -1023,7 +1007,7 @@ function forecastAttack(state, actor, target, skill) {
 }
 
 function upcomingOpponents(state, actor, pending) {
-  const nextRound = orderedActors({...state,lastSide:pending.at(-1).side,
+  const nextRound = orderedActors({...state,
     units:state.units.map(unit=>({...unit,acted:false}))});
   const beforeNextTurn = nextRound.slice(0,nextRound.findIndex(unit=>unit.id===actor.id));
   return [...pending.slice(1),...beforeNextTurn]

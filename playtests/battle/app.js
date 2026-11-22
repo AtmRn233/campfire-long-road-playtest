@@ -920,12 +920,18 @@ function accuracyPanels(accuracy,skillName) {
   const equation = sumOfTerms([["基础",accuracy.base],...factors]);
   const lines = raw === accuracy.chance ? [[equation,"合计命中率 " + accuracy.chance + "%"]] :
     [[equation,"原始命中率 " + raw + "%"],["应用 5%–95% 上下限","合计命中率 " + accuracy.chance + "%"]];
-  const subpanel = (id,equation,total) => '<div class="roll-subpanel tone-' + id + '" data-roll-panel="' + id +
-    '" hidden>' + equationLines([[equation,total]]) + '</div>';
+  const subpanel = (id,equation,total,extra=[]) => '<div class="roll-subpanel tone-' + id + '" data-roll-panel="' + id +
+    '" hidden>' + equationLines([[equation,total],...extra]) + '</div>';
   const activeDodge = accuracy.activeDodge ?? 0;
+  const attributeDodge = accuracy.attributeDodge ?? accuracy.dodge-accuracy.moraleDodge-activeDodge;
+  const rawDodge = attributeDodge + accuracy.moraleDodge;
+  const dodgeLines = [];
+  if (rawDodge<0) dodgeLines.push(["应用最低 0%","基础闪避 0%"]);
+  if (activeDodge) dodgeLines.push(["基础闪避 " + Math.max(0,rawDodge) + "% + 主动闪避 " + activeDodge + "%",
+    "合计闪避修正 " + accuracy.dodge + "%"]);
   const dodge = accuracy.dodgeLimit > accuracy.blockLimit ? subpanel("dodge",
-    sumOfTerms([["目标敏捷",accuracy.dodge-accuracy.moraleDodge-activeDodge],["目标士气",accuracy.moraleDodge],
-      ["主动闪避",activeDodge]]),"合计闪避修正 " + accuracy.dodge + "%") : "";
+    sumOfTerms([["目标敏捷",attributeDodge],["目标士气",accuracy.moraleDodge]]) || "0%",
+    (rawDodge<0 ? "修正合计 " + rawDodge : activeDodge ? "基础闪避 " + rawDodge : "合计闪避修正 " + accuracy.dodge) + "%",dodgeLines) : "";
   const baseBlock = accuracy.baseBlock ?? 0;
   const shieldBonus = accuracy.shieldBonus ?? 0;
   const block = accuracy.blockLimit > accuracy.chance ? subpanel("block",
