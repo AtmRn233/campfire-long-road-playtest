@@ -4,7 +4,7 @@ import defaultRosterProfiles from "./rosterProfiles.json" with { type: "json" };
 import defaultMounts from "../../data/rules/mounts.json" with { type: "json" };
 import basicWeapons from "../../data/rules/basic-weapons.json" with { type: "json" };
 import { createDialogue } from "./dialogue.mjs";
-import { battleItemCount, battleItemSlots, battleItemsBySlot, battleLoad } from "./loadout.mjs";
+import { battleItemCount, battleItemSlots, battleItemsBySlot, battleLoad, carryKgPerStrength } from "./loadout.mjs";
 import { adjacent, fieldRanks, fieldSideOf, rankOf } from "./grid.mjs";
 import { assignLeaders, canFight, heavyWoundRatio, isHeavilyWounded, moraleLimit,
   settleMorale, startMorale, whiteFlag } from "./morale.mjs";
@@ -690,7 +690,7 @@ function useRestoration(state,request,roll) {
   actor.items = actor.items.map(entry=>entry===item ? {...entry,qty:entry.qty-1} : entry)
     .filter(entry=>entry.qty>0);
   const itemWeight = actor.items.reduce((sum,entry)=>sum+(entry.weight ?? 0)*entry.qty,0);
-  actor.load = battleLoad(actor.load.maximum/5,actor.load.equipped,itemWeight);
+  actor.load = battleLoad(actor.load.maximum/carryKgPerStrength,actor.load.equipped,itemWeight);
   actor.acted = true;
   const recipient = actor === target ? "自己" : target.name;
   note(state,actor.name + "给" + recipient + "使用了「" + item.name + "」，恢复 " + amount +
@@ -729,7 +729,7 @@ function swapCarriedGear(state, request) {
   else actor.shield = figure(gear);
   const oldWeight = previous?.weight ?? 0;
   const weightDelta = item.weight - oldWeight;
-  actor.load = battleLoad(actor.load.maximum/5,actor.load.equipped+weightDelta,actor.load.items-weightDelta);
+  actor.load = battleLoad(actor.load.maximum/carryKgPerStrength,actor.load.equipped+weightDelta,actor.load.items-weightDelta);
   updateHandStats(actor);
   actor.acted = true;
   note(state,actor.name + "换上了「" + item.name + "」。","item");

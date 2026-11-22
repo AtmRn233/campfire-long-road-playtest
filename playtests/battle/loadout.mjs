@@ -15,8 +15,10 @@ export function battleItemsBySlot(items) {
   return slots.map(item => item ?? loose.shift());
 }
 
+export const carryKgPerStrength = 3;
+
 export function battleLoad(strength,equipped,items) {
-  const maximum = strength*5;
+  const maximum = strength*carryKgPerStrength;
   const remaining = Math.round((maximum-equipped-items)*1e6)/1e6;
-  return {maximum,equipped,items,remaining};
+  return {maximum,equipped,items,remaining:remaining === 0 ? 0 : remaining};
 }
