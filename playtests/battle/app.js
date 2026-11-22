@@ -999,7 +999,7 @@ function damagePanels(detail) {
   const components = sumOfTerms([["穿甲直伤",penetration.direct],["护甲溢出",damage.overflow]],"");
   const healthCapped = damage.hpLoss < damage.hpDamage;
   if (components) {
-    const expression = head ? "(" + components + ") × 爆头 2 倍" : components;
+    const expression = head ? "(" + components + ") × 爆头 " + damage.multiplier + " 倍（四舍五入）" : components;
     healthLines.push([expression,(healthCapped ? "理论扣血 " + damage.hpDamage : "实际扣血 " + damage.hpLoss)]);
   } else healthLines.push(["实际扣血 0"]);
   if (healthCapped) healthLines.push(["目标剩余血量 " + damage.hpBefore + "，实际扣血 " + damage.hpLoss]);

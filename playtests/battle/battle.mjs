@@ -355,10 +355,10 @@ function strikeBreakdown(damage, rate, armorBonus, layer, zone) {
       : armorDamage;
   }
   const overflow = armorDamage-armorAbsorbed;
-  const multiplier = zone === "head" ? 2 : 1;
+  const multiplier = zone === "head" ? 1.5 : 1;
   return {
     penetration:{baseRatio,armorReduction,ratio,direct,armorDamage},armorEfficiency,armorImpact,armorAbsorbed,
-    blocked,overflow,multiplier,hpDamage:(direct+overflow)*multiplier,
+    blocked,overflow,multiplier,hpDamage:Math.round((direct+overflow)*multiplier),
   };
 }
 
@@ -512,7 +512,8 @@ function startNextRound(state) {
 function resolveDefeat(state) {
   for (const side of ["player","enemy"]) {
     const survivors = sideUnits(state,side);
-    if (!survivors.some(unit=>unit.morale!==whiteFlag)) {
+    const field = survivors.filter(active);
+    if (!survivors.some(unit=>unit.morale!==whiteFlag) || (field.length && !field.some(canFight))) {
       finishBattle(state,side,survivors.length ? "surrender" : "elimination");
       return true;
     }
