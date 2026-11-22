@@ -166,7 +166,6 @@
     <button id="defend-action" type="button" data-defend>防御</button>
     <button id="dodge-action" type="button" data-dodge>闪避</button>
     <button type="button" data-items>物品</button>
-    <button type="button" data-information aria-haspopup="dialog">信息</button>
     <button id="move-action" type="button" data-move>移动</button>
     <button id="retreat-action" type="button" data-retreat>撤退</button>
   </div>
@@ -208,6 +207,7 @@
       <button type="button" role="tab" id="unit-dialogue" data-unit-tab="dialogue" aria-controls="unit-view" aria-selected="false" tabindex="-1">对话</button>
     </div>
     <section id="unit-view" role="tabpanel" aria-labelledby="unit-profile" tabindex="0"></section>
+    <div id="unit-stat-details" class="reach-details unit-stat-details" role="tooltip" hidden></div>
   </dialog>
   <dialog id="portrait-dialog" class="portrait-dialog" aria-label="人物立绘">
     <div class="portrait-view">

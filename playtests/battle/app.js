@@ -1,6 +1,6 @@
 import { battleSession } from "./client.mjs?v=battle-help";
 import { weatherParticles } from "../weatherVisual.mjs";
-import { armorPenetrationReduction, battleSwapProblem, dodgeAfterAction, restorationTargets } from "./battle.mjs";
+import { armorPenetrationReduction, battleSwapProblem, defenseFor, dodgeAfterAction, restorationTargets } from "./battle.mjs";
 import { fieldSideOf } from "./grid.mjs";
 import { battleItemLabels, battleItemsBySlot } from "./loadout.mjs";
 import { createOpeningScreen } from "./opening.mjs";
@@ -35,7 +35,6 @@ let battleId;
 let lastAmmoSpent = 0;
 let formationKey;
 let selected = "roland";
-let inspectionTarget;
 let reinforcementUnit;
 let aiming = false;
 let moving = false;
@@ -51,6 +50,7 @@ let orderVersion;
 let detailAnchor;
 let detailCloseTimer;
 let reachAnchor;
+let reachPoint;
 let inspectedUnit;
 let inspectedTrigger;
 let inspectedTab = "profile";
@@ -311,13 +311,10 @@ function receive(next) {
     $("effects").replaceChildren();
   }
   state = next;
-  if (previous?.match !== state.match || previous?.order[0] !== state.order[0] || !byId(inspectionTarget)) {
-    inspectionTarget = null;
-  }
   if (previous?.match !== state.match || !state.reinforcements?.units.includes(reinforcementUnit)) {
     reinforcementUnit = null;
   }
-  if (state.phase === "player" && selected !== state.order[0]) {
+  if (["player","enemy"].includes(state.phase) && selected !== state.order[0]) {
     selected = state.order[0];
     aiming = moving = false;
   }
@@ -501,10 +498,8 @@ function renderBoard() {
     const active = unit.id === (reinforcementUnit ?? selected);
     return '<span class="reserve-entry"><button class="reserve-unit' + (active ? " selected" : "") +
     '" data-unit="' + unit.id + '" aria-pressed="' + active + '"' +
-    (state.reinforcements && !state.reinforcements.units.includes(unit.id) ? " disabled" : "") +
     '>' + text(unit.name) +
-    '</button><button class="reserve-details" data-details="' + unit.id + '" aria-haspopup="dialog" aria-label="' +
-    text(unit.name + "详情") + '">' + (state.phase === "setup" ? "☰" : "信息") + '</button></span>';
+    '</button></span>';
   }).join("");
   const moveToReserve = canDeploy("player","reserve")
     ? '<button type="button" class="quiet" data-deploy="reserve">移入预备队</button>' : "";
@@ -515,15 +510,13 @@ function renderBoard() {
 
 function positionActionMenu() {
   const menu = $("unit-actions");
-  const unit = byId(inspectionTarget ?? selected);
-  const infoOnly = Boolean(inspectionTarget);
+  const unit = byId(state.order[0]);
   const anchor = document.querySelector('[data-card="' + unit?.id + '"]');
-  if (["setup","ended"].includes(state.phase) || (!infoOnly && (state.phase !== "player" || state.order[0] !== selected))) {
+  if (!["player","enemy"].includes(state.phase) || !unit) {
     menu.hidden = true;
     return;
   }
-  menu.dataset.infoOnly = String(infoOnly);
-  menu.setAttribute("aria-label",unit.name + (infoOnly ? "的信息菜单" : "的操作"));
+  menu.setAttribute("aria-label",unit.name + "的操作");
   positionCardMenu(menu,anchor);
 }
 
@@ -575,6 +568,8 @@ function renderControls() {
   const explanation = setup ? "布阵结束后才能行动。" : state.busy ? "正在结算当前行动。" :
     unit?.side === "enemy" ? "敌方角色由系统控制。" : unit?.acted ? "该角色本轮已行动。" : "还没轮到该角色。";
   attack.disabled = defend.disabled = dodge.disabled = !permitted;
+  $("unit-actions").querySelector("[data-skill]").disabled = !permitted;
+  $("unit-actions").querySelector("[data-items]").disabled = !permitted;
   move.disabled = !permitted || !state.movement[selected]?.destinations.length;
   attack.title = permitted ? "" : explanation;
   dodge.title = unit ? "闪避 " + unit.dodge + "% → " + dodgeAfterAction(unit.dodge) + "%" : "";
@@ -591,8 +586,8 @@ function renderControls() {
 }
 
 function unitFacts(rows, modifier = "") {
-  return '<dl class="unit-facts ' + modifier + '">' + rows.map(([label,value]) =>
-    '<div><dt>' + text(label) + '</dt><dd>' + text(value || "—") + '</dd></div>').join("") + '</dl>';
+  return '<dl class="unit-facts ' + modifier + '">' + rows.map(([label,value,stat]) =>
+    '<div' + (stat ? ' data-unit-stat="' + stat + '" tabindex="0" aria-describedby="unit-stat-details"' : "") + '><dt>' + text(label) + '</dt><dd>' + text(value || "—") + '</dd></div>').join("") + '</dl>';
 }
 
 const fraction = ({current,max}) => current + " / " + max;
@@ -600,6 +595,36 @@ const fraction = ({current,max}) => current + " / " + max;
 function blockDisplay({meleeBlock,rangedBlock}) {
   const percent = value => value + "%" + (value ? " → " + (value*2) + "%" : "");
   return meleeBlock === rangedBlock ? percent(meleeBlock) : "近战 " + percent(meleeBlock) + " · 远程 " + percent(rangedBlock);
+}
+
+function showUnitStatDetails(anchor) {
+  const unit = byId(inspectedUnit);
+  if (!unit) return;
+  const defense = defenseFor(unit);
+  const block = anchor.dataset.unitStat === "block";
+  const entries = block ? [
+    ["基础格挡",defense.baseBlock],
+    ["盾牌·" + (unit.shield?.name ?? "无"),defense.shieldBonus],
+    ["主动防御",defense.guarding ? defense.baseBlock+defense.shieldBonus : 0],
+  ] : [
+    ["敏捷（" + defense.rawTargetDexterity + "）",Math.max(0,(defense.rawTargetDexterity-8)*2)],
+    ["装备敏捷上限（有效敏捷 " + defense.targetDexterity + "）",defense.attributeDodge-Math.max(0,(defense.rawTargetDexterity-8)*2)],
+    ["士气" + (unit.morale === whiteFlag ? "（白旗按−3级）" : ""),defense.moraleDodge],
+    ["总闪避最低0%",defense.baseDodge-defense.attributeDodge-defense.moraleDodge],
+    ["主动闪避",defense.activeDodge],
+  ];
+  const total = block ? Math.max(defense.meleeBlock,defense.rangedBlock) : defense.dodge;
+  if (block) entries.push(["武器与盾牌格挡限制",total-defense.baseBlock-defense.shieldBonus-(defense.guarding ? defense.baseBlock+defense.shieldBonus : 0)]);
+  const conditions = block ? "对近战 " + defense.meleeBlock + "% · 对远程 " + defense.rangedBlock + "%" +
+    (unit.weapon.range === "远程" ? "；持远程武器不能格挡近战" : "") +
+    (!(unit.shield?.current>0) ? "；无完好盾牌不能格挡远程" : "") : "";
+  const panel = $("unit-stat-details");
+  panel.innerHTML = '<strong>' + (block ? "格挡来源" : "闪避来源") + '</strong>' +
+    entries.filter(([label,value])=>value || (!block && label.startsWith("敏捷"))).sort((a,b)=>b[1]-a[1]).map(([label,value])=>
+      '<div data-stat-value="' + value + '"><span>' + text(label) + '</span><b>' + signedPercent(value) + '</b></div>').join("") +
+    '<p>合计' + (block ? "格挡率 " : "闪避率 ") + total + '%</p>' + (conditions ? '<small>' + text(conditions) + '</small>' : "");
+  panel.hidden = false;
+  positionTooltip(anchor,panel);
 }
 
 function showProfile(unit) {
@@ -621,8 +646,8 @@ function showProfile(unit) {
       ["血量",unit.hp + " / " + unit.maxHp],
       ["士气",moraleLabel(unit.morale)],
       ["先攻",String(unit.initiative)],
-      ["格挡率",Math.max(unit.meleeBlock,unit.rangedBlock) + "%"],
-      ["闪避率",unit.dodge + "%"],
+      ["格挡率",Math.max(unit.meleeBlock,unit.rangedBlock) + "%","block"],
+      ["闪避率",unit.dodge + "%","dodge"],
       ...(unit.magic ? [["魔力",fraction(unit.magic)]] : []),
     ],"unit-profile-vitals") + '</div></div>';
 }
@@ -762,6 +787,7 @@ function showItems(unit) {
 }
 
 function updateUnitDetails() {
+  $("unit-stat-details").hidden = true;
   const unit = byId(inspectedUnit);
   if (!unit) {
     $("unit-dialog").close();
@@ -1069,20 +1095,30 @@ function positionTooltip(anchor,panel) {
   panel.style.top = Math.max(margin,Math.min(rect.top,window.innerHeight-panel.offsetHeight-margin)) + "px";
 }
 
-function closeReachDetails() {
-  $("reach-details").hidden = true;
-  reachAnchor = null;
+function positionPointerTooltip(point,panel) {
+  const gap = 16, margin = 10;
+  const left = point.x+gap+panel.offsetWidth <= window.innerWidth-margin ? point.x+gap : point.x-panel.offsetWidth-gap;
+  const top = point.y+gap+panel.offsetHeight <= window.innerHeight-margin ? point.y+gap : point.y-panel.offsetHeight-gap;
+  panel.style.left = Math.max(margin,Math.min(left,window.innerWidth-panel.offsetWidth-margin)) + "px";
+  panel.style.top = Math.max(margin,Math.min(top,window.innerHeight-panel.offsetHeight-margin)) + "px";
 }
 
-function showReachDetails(anchor) {
-  if (anchor === reachAnchor) return;
+function closeReachDetails() {
+  $("reach-details").hidden = true;
+  reachAnchor = reachPoint = null;
+}
+
+function showReachDetails(anchor,point) {
   reachAnchor = anchor;
+  reachPoint = point;
   const panel = $("reach-details");
   const chance = state.hitChances[selected]?.[anchor.dataset.card];
   panel.classList.toggle("can-hit",chance !== undefined);
+  panel.dataset.chanceTone = chance === undefined ? "" : chance < 40 ? "low" : chance < 70 ? "medium" : "high";
   panel.textContent = chance === undefined ? reachReason() : "命中率 " + chance + "%";
   panel.hidden = false;
-  positionTooltip(anchor,panel);
+  if (point) positionPointerTooltip(point,panel);
+  else positionTooltip(anchor,panel);
 }
 
 function reportToolbar() {
@@ -1503,21 +1539,13 @@ function onUnit(id) {
     reinforcementUnit = reinforcementUnit === id ? null : id;
     return render();
   }
-  if (state.phase !== "setup") {
-    if (unit.row === "reserve" || state.phase === "ended") return;
-    inspectionTarget = canAct(unit) || inspectionTarget === id ? null : id;
-    if (inspectionTarget && (aiming || moving)) {
-      aiming = moving = false;
-      setNotice();
-      return render();
-    }
-    return positionActionMenu();
-  }
+  if (state.phase !== "setup") return showUnitDetails(id);
   selected = id;
   aiming = false;
   moving = false;
   setNotice();
   render();
+  showUnitDetails(id);
 }
 
 document.addEventListener("click",(event) => {
@@ -1587,7 +1615,6 @@ document.addEventListener("click",(event) => {
   if (button.hasAttribute("data-retreat") && canAct(byId(selected))) return send({type:"retreat",actor:selected});
   if (button.hasAttribute("data-skill")) return setNotice(byId(selected).name + "暂无可用技能。");
   if (button.hasAttribute("data-items")) return showUnitDetails(selected,"items");
-  if (button.hasAttribute("data-information")) return showUnitDetails(inspectionTarget ?? selected);
   if ((button.hasAttribute("data-defend") || button.hasAttribute("data-dodge")) && canAct(byId(selected))) {
     aiming = false;
     moving = false;
@@ -1609,6 +1636,8 @@ document.addEventListener("click",(event) => {
 $("board").addEventListener("pointermove",(event) => {
   pointer = {x:event.clientX,y:event.clientY,target:event.target.closest("[data-unit]")?.dataset.unit};
   drawArrow();
+  const card = event.target.closest(".out-of-range,.target");
+  if (card) showReachDetails(card,pointer);
 });
 $("board").addEventListener("pointerleave",() => { pointer = null; drawArrow(); });
 $("ranks").addEventListener("animationend",event => {
@@ -1621,10 +1650,24 @@ $("ranks").addEventListener("animationend",event => {
 });
 $("terrain").addEventListener("change",(event) => send({type:"terrain",terrain:event.target.value}));
 $("unit-dialog").addEventListener("close",() => {
+  $("unit-stat-details").hidden = true;
   const fallback = () => document.querySelector('[data-details="' + inspectedUnit + '"],[data-card="' +
     inspectedUnit + '"] .card-select');
   (inspectedTrigger?.getClientRects().length ? inspectedTrigger : fallback())?.focus();
 });
+for (const type of ["pointerover","focusin"]) {
+  $("unit-view").addEventListener(type,event=>{
+    const anchor = event.target.closest("[data-unit-stat]");
+    if (anchor) showUnitStatDetails(anchor);
+  });
+}
+for (const type of ["pointerout","focusout"]) {
+  $("unit-view").addEventListener(type,event=>{
+    const anchor = event.target.closest("[data-unit-stat]");
+    if (anchor && !anchor.contains(event.relatedTarget)) $("unit-stat-details").hidden = true;
+  });
+}
+$("unit-view").addEventListener("scroll",()=>{$("unit-stat-details").hidden = true;},{passive:true});
 $("unit-view").addEventListener("submit",event => {
   const form = event.target.closest("form[data-use-potion]");
   if (!form) return;
@@ -1682,7 +1725,7 @@ $("log").addEventListener("scroll",refreshAttackDetailsPosition,{passive:true});
 for (const type of ["pointerover","focusin"]) {
   $("board").addEventListener(type,event => {
     const card = event.target.closest(".out-of-range,.target");
-    if (card) showReachDetails(card);
+    if (card) showReachDetails(card,type === "pointerover" ? {x:event.clientX,y:event.clientY} : undefined);
   });
 }
 for (const type of ["pointerout","focusout"]) {
@@ -1711,6 +1754,7 @@ document.addEventListener("keydown",(event) => {
   }
 });
 window.addEventListener("resize",() => {
+  $("unit-stat-details").hidden = true;
   if (!$("victory-screen").hidden) positionVictoryMenu();
   else if (state) { closeAttackDetails(); closeReachDetails(); positionActionMenu(); drawArrow(); showSpeech(); }
 });
@@ -1721,7 +1765,10 @@ window.addEventListener("scroll",() => {
   refreshAttackDetailsPosition();
   if (reachAnchor) {
     const rect = reachAnchor.getBoundingClientRect();
-    if (rect.bottom > 0 && rect.top < window.innerHeight) positionTooltip(reachAnchor,$("reach-details"));
+    if (rect.bottom > 0 && rect.top < window.innerHeight) {
+      if (reachPoint) positionPointerTooltip(reachPoint,$("reach-details"));
+      else positionTooltip(reachAnchor,$("reach-details"));
+    }
     else closeReachDetails();
   }
   positionActionMenu();

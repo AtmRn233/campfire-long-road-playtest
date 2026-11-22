@@ -77,7 +77,7 @@ body[data-lighting] .board > .weather-visual[data-weather="clear"]{opacity:0}
 .unit-menu i{display:block;width:9px;height:1px;background:currentColor}
 .unit-menu:hover,.unit-menu:focus-visible{border-color:var(--gold);color:var(--gold)}
 .card.enemy{border-color:#98665a;background:linear-gradient(140deg,#553733,#2c272d 80%)}
-.card.selected{transform:translateY(-3px);border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 0 19px #f1b96255}
+.card.selected{transform:translateY(-3px);border-color:#ff685b;box-shadow:0 0 0 1px #ff685b,0 0 22px #ff3d3799}
 .card:not(.out-of-range):hover{transform:translateY(-3px);border-color:#ffce85}
 .card.target{border-color:#ffd58e;box-shadow:0 0 0 1px #f0c079,0 0 20px #d6985155;cursor:crosshair}
 .card.out-of-range{filter:grayscale(1) brightness(.65);cursor:not-allowed}
@@ -136,7 +136,6 @@ body[data-lighting] .board > .weather-visual[data-weather="clear"]{opacity:0}
 .reserve-entry{display:inline-flex;align-items:center}
 .reserve-slots .quiet,.reserve-unit{font-size:12px;border:1px solid #567171;border-radius:4px;padding:3px 8px;background:#294245}
 .reserve-unit.selected{border-color:var(--gold);color:var(--gold)}
-.reserve-details{font-size:12px;margin-left:1px;background:#1a2b32;border:1px solid #567171;border-radius:3px;padding:3px 5px}
 #aim,#effects{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 #aim{z-index:4}
 #effects{z-index:5;overflow:visible}
@@ -173,9 +172,8 @@ body[data-lighting] .board > .weather-visual[data-weather="clear"]{opacity:0}
 .primary{border:1px solid #f1c082;border-radius:5px;background:linear-gradient(#e6b773,#c68d4e);color:#251b12;padding:7px 13px;font-size:13px;font-weight:760;letter-spacing:.05em;white-space:nowrap}
 .primary:hover:not(:disabled){background:#f0c687}
 .unit-actions:not([hidden]){position:fixed;z-index:8;display:grid;gap:3px;width:73px;padding:4px;border:1px solid #7c6950;border-radius:7px;background:#172831;box-shadow:0 6px 20px #080e13aa}
-#unit-actions:not([data-info-only="true"]){width:140px;grid-template-columns:repeat(2,minmax(0,1fr))}
+#unit-actions{width:140px;grid-template-columns:repeat(2,minmax(0,1fr));border-color:#e27568;box-shadow:0 0 12px #e85b4340,0 6px 20px #080e13aa}
 .unit-actions button{padding:0 2px;min-height:28px;border:1px solid #40555b;border-radius:4px;background:#23373f;color:#e6ddcc;font-size:12px;white-space:nowrap}
-.unit-actions[data-info-only="true"] button:not([data-information]){display:none}
 .unit-actions button:hover:not(:disabled){background:#34474b;border-color:#e4b776;color:#ffe0ab}
 .unit-actions [data-aim]:not(:disabled),.unit-actions [data-settlement-command="loot"]:not(:disabled){border-color:#d0a16c;background:#c99557;color:#221a12;font-weight:700}
 .unit-actions [aria-pressed="true"]:not(:disabled){background:#3b3c35;color:#ffdb9d}
@@ -517,3 +515,15 @@ body[data-lighting="lit"] .encounter-screen{background:radial-gradient(ellipse a
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}.card.impact,#turn-order .current img,.battle-banner{animation:none}.damage{animation-duration:.9s}.casualty-piece{animation:fade-casualty .24s ease-out forwards}}
 @media(prefers-reduced-motion:reduce){.meter-loss{display:none}}
+
+.reach-details[data-chance-tone="low"]{color:#ff8078}
+.reach-details[data-chance-tone="medium"]{color:#ffdb6e}
+.reach-details[data-chance-tone="high"]{color:#8fe0a6}
+[data-unit-stat]{cursor:help}
+[data-unit-stat] dd{text-decoration:underline dotted #839b91;text-underline-offset:4px}
+.unit-stat-details{z-index:15;min-width:210px;max-width:min(300px,calc(100vw - 20px));font-variant-numeric:tabular-nums}
+.unit-stat-details strong{display:block;margin-bottom:5px;color:#f0dac0}
+.unit-stat-details>div{display:flex;justify-content:space-between;gap:14px}
+.unit-stat-details b{white-space:nowrap}
+.unit-stat-details p{margin:5px 0 0;padding-top:5px;border-top:1px solid #a2815f66;font-weight:700}
+.unit-stat-details small{display:block;margin-top:4px;color:#bdc9c2;line-height:1.5}
