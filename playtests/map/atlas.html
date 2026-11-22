@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>地图</title>
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./town-roofs.css">
+  <style>
+    :root { font-size: 14px; }
+    .map-view { height: 100dvh; display: grid; grid-template-columns: minmax(0, 1fr) 190px; }
+    #map { display: block; width: 100%; height: auto; max-height: 100%; align-self: center; cursor: crosshair; }
+    #map:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .details { background: #252119; border-left: 1px solid var(--line); padding: 48px 10px 12px; overflow: auto; }
+    .details h1 { margin: 0; font-size: 1.12rem; }
+    .details .reading { font-size: .87rem; }
+    .details input { accent-color: #d4ad69; }
+    #map-layers { display: flex; gap: 5px; margin-bottom: 10px; }
+    #map-layers button { flex: 1; }
+    #map-layers [aria-pressed="true"] { color: #f6d898; border-color: #b68a4a; background: #4c3826; }
+    #lore { font-size: .86rem; margin: 9px 0; }
+    #region { display: block; color: #f5e6bd; min-height: 1.5em; }
+    .details section { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
+    #status { padding: 8px 12px; margin: 0; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <p id="status" role="status">正在载入地图…</p>
+  <main class="map-view" hidden>
+    <canvas id="map" tabindex="0" aria-label="地图"></canvas>
+    <aside class="details" aria-label="地点资料">
+      <nav id="map-layers" aria-label="地图层" hidden>
+        <button type="button" data-layer="surface">地表</button>
+        <button type="button" data-layer="underground">地下</button>
+      </nav>
+      <h1 id="place"></h1>
+      <dl class="location-facts">
+        <div class="reading"><dt>坐标</dt><dd id="coordinates"></dd></div>
+        <div class="reading"><dt>地形</dt><dd id="terrain"></dd></div>
+        <div class="reading" id="difficulty" hidden><dt>移动难度</dt><dd id="movement"></dd></div>
+      </dl>
+      <p id="lore"></p>
+      <output id="region" role="status" aria-label="区域"></output>
+      <section class="atlas-options" aria-label="地图显示">
+        <label><input type="checkbox" id="grid" checked> 网格</label>
+        <label><input type="checkbox" id="labels" checked> 地名</label>
+      </section>
+    </aside>
+  </main>
+  <script src="./assets.js"></script>
+  <script src="./map-model.js"></script>
+  <script src="./map-lore.js"></script>
+  <script src="./map-data.js"></script>
+  <script src="./town-render.js"></script>
+  <script src="./map-render.js"></script>
+  <script type="module" src="./atlas.js"></script>
+</body>
+</html>

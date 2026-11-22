@@ -1,0 +1,18 @@
+{
+  "horse": {
+    "name": "马",
+    "size": "大型",
+    "maxHp": 100,
+    "draft": {
+      "armorType": "无甲",
+      "armorName": "无",
+      "armorDurability": 0,
+      "dodgeModifier": 0,
+      "initiativeModifier": 0,
+      "ridingLoad": 20,
+      "packLoad": 50,
+      "favoredTerrains": "道路／桥梁、草地、干草原",
+      "difficultTerrains": "密林、山地、雪山、沼泽、地下矿井、天然洞穴"
+    }
+  }
+}

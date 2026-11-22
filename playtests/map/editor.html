@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>石岸镇 · 地图编辑器</title>
+  <link rel="stylesheet" href="./editor.css">
+  <link rel="stylesheet" href="./town-roofs.css">
+  <script src="assets.js" defer></script>
+  <script src="map-model.js" defer></script>
+  <script src="map-lore.js" defer></script>
+  <script src="map-data.js" defer></script>
+  <script src="town-render.js" defer></script>
+  <script src="map-render.js" defer></script>
+  <script src="map-party.js" defer></script>
+  <script type="module" src="editor.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <h1 id="map-name">石岸镇</h1><span id="map-size"></span>
+    </div>
+    <div class="view-controls">
+      <label><input type="checkbox" id="show-grid" checked> 网格</label>
+      <label><input type="checkbox" id="show-labels" checked> 地标名</label>
+    </div>
+    <div class="file-actions">
+      <button type="button" id="undo" title="撤销 (Ctrl+Z)" disabled>撤销</button>
+      <button type="button" id="new-preset">载入新版底图</button>
+      <button type="button" id="import">导入 JSON</button>
+      <button type="button" id="json">导出 JSON</button>
+      <button type="button" id="png" class="primary">导出 PNG</button>
+      <input type="file" id="file" accept=".json,application/json" hidden>
+    </div>
+  </header>
+  <div class="workspace">
+    <aside class="sidebar">
+      <section class="library" aria-labelledby="assets-heading">
+        <h2 id="assets-heading">素材库</h2>
+        <div class="mode-tabs" aria-label="编辑工具">
+          <button type="button" data-mode="terrain" aria-pressed="false">地形</button>
+          <button type="button" id="open-town" aria-pressed="false">小地图</button>
+          <button type="button" id="open-underground" aria-pressed="false" hidden>地下</button>
+          <button type="button" data-mode="site" aria-pressed="true">地标</button>
+        </div>
+        <div class="palette" id="palette"></div>
+      </section>
+      <section class="inspector" aria-labelledby="selection-heading">
+        <div class="section-heading">
+          <h2 id="selection-heading">当前格</h2>
+          <output id="coordinates">X 16 · Y 12</output>
+        </div>
+        <div class="site-fields" id="site-fields">
+          <label for="site-name">地名</label>
+          <input id="site-name" maxlength="36" autocomplete="off">
+        </div>
+        <div class="selection-meta">
+          <span id="tile-description"></span>
+          <button type="button" id="delete-site" class="text-button">移除地标</button>
+        </div>
+        <div class="place-lore" id="place-lore" hidden>
+          <h3 id="place-lore-name"></h3>
+          <p id="place-lore-text"></p>
+        </div>
+      </section>
+    </aside>
+    <main class="map-workspace" aria-label="地图工作区">
+      <div class="atlas-viewport">
+        <div class="atlas-frame">
+          <span class="origin" aria-hidden="true">↘</span>
+          <div id="axis-x" class="axis axis-x" aria-hidden="true"></div>
+          <div id="axis-y" class="axis axis-y" aria-hidden="true"></div>
+          <div class="canvas-shell">
+            <canvas id="atlas" tabindex="0" aria-label="石岸镇地图" aria-describedby="tool-hint"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="map-footer">
+        <p id="tool-hint">拖动地图上的地标，或从左侧拖入素材。</p>
+        <output id="cursor-coordinate" aria-label="指针坐标">X 16 · Y 12</output>
+      </div>
+      <p id="notice" class="notice" role="status"></p>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,26 @@
+[
+  {
+    "id": "roland", "name": "罗兰", "role": "骑士", "gender": "male", "side": "player", "row": "front",
+    "weapon": "长剑", "body": "链甲", "head": "锅盔",
+    "additionalGear": [
+      { "slot": "underwear_top", "label": "内衣／内衬", "name": "衬衣" },
+      { "slot": "belt", "label": "腰带", "name": "护腰" }
+    ]
+  },
+  {
+    "id": "milo", "name": "米洛", "role": "长矛兵", "gender": "male", "side": "player", "row": "front",
+    "weapon": "矛", "body": "棉甲", "head": "布帽", "shield": "圆盾",
+    "additionalGear": [
+      { "slot": "legs", "label": "下身", "name": "长裤" },
+      { "slot": "feet", "label": "鞋子", "name": "短靴" }
+    ]
+  },
+  {
+    "id": "vera", "name": "薇拉", "role": "弓手", "gender": "female", "side": "player", "row": "back",
+    "weapon": "弓", "body": "布衣", "head": "皮帽",
+    "additionalGear": [
+      { "slot": "legs", "label": "下身", "name": "绑腿" },
+      { "slot": "wrists", "label": "手腕", "name": "护腕" }
+    ]
+  }
+]

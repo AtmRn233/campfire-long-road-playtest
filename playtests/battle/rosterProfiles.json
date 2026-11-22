@@ -1,0 +1,583 @@
+{
+  "roland": {
+    "level": 5,
+    "raceName": "人类",
+    "size": "中型",
+    "role": "战士",
+    "originName": "军营",
+    "traits": [
+      "身强力壮",
+      "处变不惊"
+    ],
+    "attributes": {
+      "strength": 14,
+      "dexterity": 9,
+      "constitution": 11,
+      "intelligence": 8,
+      "perception": 8,
+      "charisma": 8
+    },
+    "levelPoints": {
+      "strength": 2,
+      "dexterity": 1,
+      "constitution": 1,
+      "intelligence": 0,
+      "perception": 0,
+      "charisma": 0
+    },
+    "attributeSources": {
+      "strength": {
+        "base": 8,
+        "race": 0,
+        "origin": 1,
+        "profession": 1,
+        "traits": 2,
+        "growth": 2,
+        "total": 14
+      },
+      "dexterity": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 1,
+        "total": 9
+      },
+      "constitution": {
+        "base": 8,
+        "race": 0,
+        "origin": 1,
+        "profession": 1,
+        "traits": 0,
+        "growth": 1,
+        "total": 11
+      },
+      "intelligence": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      },
+      "perception": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      },
+      "charisma": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      }
+    }
+  },
+  "milo": {
+    "level": 5,
+    "raceName": "人类",
+    "size": "中型",
+    "role": "战士",
+    "originName": "木匠",
+    "traits": [
+      "身子硬朗",
+      "勤勉"
+    ],
+    "attributes": {
+      "strength": 11,
+      "dexterity": 10,
+      "constitution": 12,
+      "intelligence": 8,
+      "perception": 8,
+      "charisma": 8
+    },
+    "levelPoints": {
+      "strength": 1,
+      "dexterity": 1,
+      "constitution": 2,
+      "intelligence": 0,
+      "perception": 0,
+      "charisma": 0
+    },
+    "attributeSources": {
+      "strength": {
+        "base": 8,
+        "race": 0,
+        "origin": 1,
+        "profession": 1,
+        "traits": 0,
+        "growth": 1,
+        "total": 11
+      },
+      "dexterity": {
+        "base": 8,
+        "race": 0,
+        "origin": 1,
+        "profession": 0,
+        "traits": 0,
+        "growth": 1,
+        "total": 10
+      },
+      "constitution": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 1,
+        "traits": 1,
+        "growth": 2,
+        "total": 12
+      },
+      "intelligence": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      },
+      "perception": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      },
+      "charisma": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      }
+    }
+  },
+  "vera": {
+    "level": 5,
+    "raceName": "人类",
+    "size": "中型",
+    "role": "游侠",
+    "originName": "猎户",
+    "traits": [
+      "眼尖耳灵",
+      "谨慎"
+    ],
+    "attributes": {
+      "strength": 8,
+      "dexterity": 13,
+      "constitution": 8,
+      "intelligence": 8,
+      "perception": 12,
+      "charisma": 8
+    },
+    "levelPoints": {
+      "strength": 0,
+      "dexterity": 3,
+      "constitution": 0,
+      "intelligence": 0,
+      "perception": 1,
+      "charisma": 0
+    },
+    "attributeSources": {
+      "strength": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      },
+      "dexterity": {
+        "base": 8,
+        "race": 0,
+        "origin": 1,
+        "profession": 1,
+        "traits": 0,
+        "growth": 3,
+        "total": 13
+      },
+      "constitution": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      },
+      "intelligence": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      },
+      "perception": {
+        "base": 8,
+        "race": 0,
+        "origin": 1,
+        "profession": 1,
+        "traits": 1,
+        "growth": 1,
+        "total": 12
+      },
+      "charisma": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      }
+    }
+  },
+  "garrick": {
+    "level": 4,
+    "raceName": "人类",
+    "size": "中型",
+    "role": "战士",
+    "originName": "军营",
+    "traits": [
+      "小有臂力",
+      "谋事周密"
+    ],
+    "attributes": {
+      "strength": 13,
+      "dexterity": 8,
+      "constitution": 10,
+      "intelligence": 8,
+      "perception": 8,
+      "charisma": 9
+    },
+    "levelPoints": {
+      "strength": 2,
+      "dexterity": 0,
+      "constitution": 0,
+      "intelligence": 0,
+      "perception": 0,
+      "charisma": 1
+    },
+    "attributeSources": {
+      "strength": {
+        "base": 8,
+        "race": 0,
+        "origin": 1,
+        "profession": 1,
+        "traits": 1,
+        "growth": 2,
+        "total": 13
+      },
+      "dexterity": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      },
+      "constitution": {
+        "base": 8,
+        "race": 0,
+        "origin": 1,
+        "profession": 1,
+        "traits": 0,
+        "growth": 0,
+        "total": 10
+      },
+      "intelligence": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      },
+      "perception": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      },
+      "charisma": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 1,
+        "total": 9
+      }
+    }
+  },
+  "bren": {
+    "level": 4,
+    "raceName": "人类",
+    "size": "中型",
+    "role": "野蛮人",
+    "originName": "木匠",
+    "traits": [
+      "体魄强健",
+      "好斗"
+    ],
+    "attributes": {
+      "strength": 12,
+      "dexterity": 9,
+      "constitution": 12,
+      "intelligence": 8,
+      "perception": 8,
+      "charisma": 8
+    },
+    "levelPoints": {
+      "strength": 2,
+      "dexterity": 0,
+      "constitution": 1,
+      "intelligence": 0,
+      "perception": 0,
+      "charisma": 0
+    },
+    "attributeSources": {
+      "strength": {
+        "base": 8,
+        "race": 0,
+        "origin": 1,
+        "profession": 1,
+        "traits": 0,
+        "growth": 2,
+        "total": 12
+      },
+      "dexterity": {
+        "base": 8,
+        "race": 0,
+        "origin": 1,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 9
+      },
+      "constitution": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 1,
+        "traits": 2,
+        "growth": 1,
+        "total": 12
+      },
+      "intelligence": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      },
+      "perception": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      },
+      "charisma": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      }
+    }
+  },
+  "oswin": {
+    "level": 4,
+    "raceName": "人类",
+    "size": "中型",
+    "role": "游侠",
+    "originName": "军营",
+    "traits": [
+      "手脚麻利",
+      "谨慎"
+    ],
+    "attributes": {
+      "strength": 9,
+      "dexterity": 12,
+      "constitution": 9,
+      "intelligence": 8,
+      "perception": 10,
+      "charisma": 8
+    },
+    "levelPoints": {
+      "strength": 0,
+      "dexterity": 2,
+      "constitution": 0,
+      "intelligence": 0,
+      "perception": 1,
+      "charisma": 0
+    },
+    "attributeSources": {
+      "strength": {
+        "base": 8,
+        "race": 0,
+        "origin": 1,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 9
+      },
+      "dexterity": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 1,
+        "traits": 1,
+        "growth": 2,
+        "total": 12
+      },
+      "constitution": {
+        "base": 8,
+        "race": 0,
+        "origin": 1,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 9
+      },
+      "intelligence": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      },
+      "perception": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 1,
+        "traits": 0,
+        "growth": 1,
+        "total": 10
+      },
+      "charisma": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      }
+    }
+  },
+  "herman": {
+    "level": 4,
+    "raceName": "人类",
+    "size": "中型",
+    "role": "战士",
+    "originName": "驿站",
+    "traits": [
+      "身手敏捷",
+      "惯于远行"
+    ],
+    "attributes": {
+      "strength": 10,
+      "dexterity": 12,
+      "constitution": 11,
+      "intelligence": 8,
+      "perception": 8,
+      "charisma": 8
+    },
+    "levelPoints": {
+      "strength": 1,
+      "dexterity": 1,
+      "constitution": 1,
+      "intelligence": 0,
+      "perception": 0,
+      "charisma": 0
+    },
+    "attributeSources": {
+      "strength": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 1,
+        "traits": 0,
+        "growth": 1,
+        "total": 10
+      },
+      "dexterity": {
+        "base": 8,
+        "race": 0,
+        "origin": 1,
+        "profession": 0,
+        "traits": 2,
+        "growth": 1,
+        "total": 12
+      },
+      "constitution": {
+        "base": 8,
+        "race": 0,
+        "origin": 1,
+        "profession": 1,
+        "traits": 0,
+        "growth": 1,
+        "total": 11
+      },
+      "intelligence": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      },
+      "perception": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      },
+      "charisma": {
+        "base": 8,
+        "race": 0,
+        "origin": 0,
+        "profession": 0,
+        "traits": 0,
+        "growth": 0,
+        "total": 8
+      }
+    }
+  }
+}

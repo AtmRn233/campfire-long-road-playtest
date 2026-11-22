@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>石岸镇 · 地图测试</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./assets.js"></script>
+  <script src="./map-model.js"></script>
+  <script src="./map-lore.js"></script>
+  <script src="./map-data.js"></script>
+  <script src="./map-render.js"></script>
+  <script src="./map-party.js"></script>
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <main class="layout">
+    <aside class="panel location-panel" aria-label="地点资料">
+      <h2>地点资料</h2>
+      <h1 id="place"></h1>
+      <dl class="location-facts">
+        <div class="reading"><dt>坐标</dt><dd id="coordinates"></dd></div>
+        <div class="reading"><dt>地形</dt><dd id="terrain"></dd></div>
+        <div class="reading"><dt>移动难度</dt><dd id="movement"></dd></div>
+      </dl>
+      <p id="lore"></p>
+      <section class="map-options" aria-label="地图显示">
+        <h2>地图显示</h2>
+        <div class="atlas-options">
+          <label><input type="checkbox" id="grid" checked> 网格</label>
+          <label><input type="checkbox" id="labels" checked> 地名</label>
+          <label class="fit-option"><input type="checkbox" id="fit-map"> 显示全图</label>
+        </div>
+      </section>
+      <details class="test-options">
+        <summary>测试选项</summary>
+        <div class="reading"><label for="race">队伍种族</label><select id="race"></select></div>
+        <div class="reading"><label for="weather">天气</label><select id="weather"></select></div>
+        <div class="reading"><span>当前视野</span><output id="sight"></output></div>
+        <div class="atlas-options">
+          <label><input type="checkbox" id="fog"> 按视野探索</label>
+          <label><input type="checkbox" id="boat"> 有船</label>
+        </div>
+        <div class="light-controls">
+          <button id="torch">点火把</button><button id="lamp">点提灯</button><button id="extinguish">熄灯</button>
+        </div>
+        <output id="light"></output>
+        <button id="reset">从石岸镇重新出发</button>
+      </details>
+    </aside>
+    <section class="panel atlas-panel" aria-label="区域地图">
+      <div class="atlas" id="atlas">
+        <canvas id="map" tabindex="0" aria-label="石岸镇地图"></canvas>
+      </div>
+    </section>
+    <div class="right-rail">
+      <section class="panel route-panel" aria-labelledby="route-title">
+        <h2 id="route-title">预计行程用时</h2>
+        <output id="route-info" aria-labelledby="route-title">—</output>
+      </section>
+      <aside class="panel action-panel" aria-label="行动">
+        <h2>行动</h2>
+        <div class="actions">
+          <button type="button" class="enter" disabled>进入</button>
+          <button type="button" disabled>调查</button>
+        </div>
+        <button type="button" id="stop" disabled>停止行走</button>
+        <p id="notice" role="status">正在载入地图和规则…</p>
+      </aside>
+    </div>
+  </main>
+</body>
+</html>

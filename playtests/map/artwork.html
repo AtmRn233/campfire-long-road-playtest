@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>地图</title>
+  <link rel="stylesheet" href="./town-roofs.css">
+  <style>
+    html, body { height: 100%; margin: 0; overflow: hidden; }
+    canvas:not([hidden]) { display: block; width: 100%; height: 100%; object-fit: contain; }
+  </style>
+</head>
+<body>
+  <p id="status" role="status">正在载入地图…</p>
+  <canvas id="map" role="img" hidden></canvas>
+  <script src="./assets.js"></script>
+  <script src="./map-model.js"></script>
+  <script src="./map-lore.js"></script>
+  <script src="./map-data.js"></script>
+  <script src="./town-render.js"></script>
+  <script src="./map-render.js"></script>
+  <script>
+    function renderLegend(types) {
+      const sample = document.createElement('canvas');
+      const cell = MapRender.CELL;
+      sample.width = sample.height = cell + 8;
+      const ctx = sample.getContext('2d');
+      ctx.translate(4, 4);
+      const icons = {};
+      for (const type of types) {
+        if (!MapData.townSites.has(type)) continue;
+        ctx.clearRect(-4, -4, sample.width, sample.height);
+        TownArt.paint(ctx, { type, x: 0, y: 0, width: 1, height: 1 }, cell);
+        icons[type] = sample.toDataURL();
+      }
+      window.parent.postMessage({ type: 'campfire-map-legend', icons }, location.origin);
+    }
+
+    window.addEventListener('message', async (event) => {
+      if (event.origin !== location.origin || event.source !== window.parent || event.data?.type !== 'campfire-map-artwork') return;
+      const { map, title, legendTypes } = event.data;
+      const canvas = document.getElementById('map');
+      const status = document.getElementById('status');
+      try {
+        if (map.kind === 'town' && Array.isArray(legendTypes) && legendTypes.length) renderLegend(legendTypes);
+        await MapRender.ready;
+        canvas.width = map.width * MapRender.CELL;
+        canvas.height = map.height * MapRender.CELL;
+        canvas.setAttribute('aria-label', title);
+        MapRender.render(canvas, map, { grid: true, labels: true, regionNames: false });
+        canvas.hidden = false;
+        status.hidden = true;
+      } catch {
+        status.textContent = '无法载入地图。';
+      }
+    });
+  </script>
+</body>
+</html>
