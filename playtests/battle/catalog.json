@@ -45,7 +45,7 @@
       "initiative": -3,
       "penetration": 0.3,
       "armorBonus": -0.1,
-      "largeBonus": 0.1,
+      "largeBonus": 0.05,
       "shieldBonus": 0
     },
     "弓": {

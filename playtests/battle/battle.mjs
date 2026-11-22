@@ -65,7 +65,7 @@ const baseHeadChance = 10;
 const baseBlock = 10;
 const bubbleDuration = 1000;
 const moralePercent = (unit) => Math.max(-moraleLimit,unit.morale) * 5;
-const strengthDamagePercent = (unit) => (unit.attributes.strength-baseAttribute) * 5;
+const strengthDamagePercent = (unit) => (unit.attributes.strength-baseAttribute) * 2;
 const isMeleeFighter = (unit) => canFight(unit) && unit.weapon.range !== "远程";
 
 export function effectiveAttribute(unit,attribute) {
@@ -583,7 +583,7 @@ export function defenseFor(unit) {
   const targetDexterity = effectiveAttribute(unit,"dexterity");
   const rawTargetDexterity = unit.attributes.dexterity;
   const shield = intactShield(unit);
-  const attributeDodge = Math.max(0,(targetDexterity-baseAttribute)*5);
+  const attributeDodge = Math.max(0,(targetDexterity-baseAttribute)*2);
   const moraleDodge = moralePercent(unit);
   const baseDodge = Math.max(0,attributeDodge + moraleDodge);
   const activeDodge = unit.statuses.dodge > 0 ? dodgeAfterAction(baseDodge)-baseDodge : 0;
@@ -616,8 +616,8 @@ export function accuracyFor(actor, target, weather, state, skill) {
   const attackAttribute = ranged ? "dexterity" : "strength";
   const rawScore = actor.attributes[attackAttribute];
   const score = effectiveAttribute(actor,attackAttribute);
-  const adjustment = (score - baseAttribute) * 5;
-  const weaponMatchup = actor.weapon.range === "长" && target.weapon.range === "短" ? 10 : 0;
+  const adjustment = (score - baseAttribute) * 2;
+  const weaponMatchup = actor.weapon.range === "长" && target.weapon.range === "短" ? 5 : 0;
   const targetSize = target.mount?.current > 0 ? target.mount.size : target.size;
   const largeBonus = actor.weapon.range === "长" && targetSize === "大型" ? Math.round((actor.weapon.largeBonus ?? 0)*100) : 0;
   const flankingHit = flankingBonus(state,actor,target);
@@ -640,7 +640,7 @@ function rollPercent(roll) {
 }
 
 const noteStrike = (state,summary,detail) => note(state,summary,detail.name ? "skill" : "strike","",detail);
-const shieldImpact = (actor) => actor.damage + Math.round(actor.damage * actor.weapon.shieldBonus);
+const shieldImpact = (actor,damage) => damage + Math.round(damage * actor.weapon.shieldBonus);
 const headChance = (actor) => baseHeadChance + Math.round(actor.weapon.headBonus * 100);
 const healingAmount = (actor,skill) => Math.min(actor.maxHp - actor.hp,Math.round(actor.maxHp*skill.healRatio));
 
@@ -761,11 +761,11 @@ function attack(state, actor, target, roll, skill) {
   const accuracy = {...accuracyFor(actor,target,state.weather,state,skill),roll:rolled,forced};
   const hit = rolled <= accuracy.chance;
   const outcome = hit ? "hit" : rolled <= accuracy.blockLimit ? "block" : rolled <= accuracy.dodgeLimit ? "dodge" : "miss";
-  const largeBonus = hit ? accuracy.largeBonus : 0;
+  const largeBonus = accuracy.largeBonus;
   const damageCheck = {
     weaponDamage:actor.weapon.damage, strength:actor.weapon.magic ? null : actor.attributes.strength,
     strengthPercent:actor.weapon.magic ? 0 : strengthDamagePercent(actor), adjustedDamage:actor.damage,
-    largeBonus, attack:actor.damage+largeBonus,
+    largeBonus, attack:Math.round(actor.damage*(100+largeBonus)/100),
   };
   const detail = {
     hit,outcome,actor:actor.name,target:target.name,weapon:actor.weapon.name,accuracy,damageCheck,damage:null,
@@ -778,8 +778,8 @@ function attack(state, actor, target, roll, skill) {
     const shield = outcome === "block" ? intactShield(target) : null;
     if (shield) {
       const before = shield.current;
-      const impact = shieldImpact(actor);
-      const bonus = impact - actor.damage;
+      const impact = shieldImpact(actor,damageCheck.attack);
+      const bonus = impact - damageCheck.attack;
       const blocked = Math.min(before,impact);
       shield.current -= blocked;
       detail.guard = {shield:shield.name,before,blocked,after:shield.current,bonus,impact,
@@ -981,9 +981,9 @@ export function action(state, request, roll = Math.random) {
 function forecastAttack(state, actor, target, skill) {
   const {chance,blockLimit,largeBonus} = accuracyFor(actor,target,state.weather,state,skill);
   const hit = chance / 100;
-  const damage = actor.damage + largeBonus;
+  const damage = Math.round(actor.damage*(100+largeBonus)/100);
   const shield = intactShield(target);
-  const shieldDamage = shield ? Math.min(shield.current,shieldImpact(actor)) : 0;
+  const shieldDamage = shield ? Math.min(shield.current,shieldImpact(actor,damage)) : 0;
   const shieldValue = shieldDamage * .20 + (shieldDamage > 0 && shieldDamage === shield.current ? 8 : 0);
   const block = (blockLimit - chance) / 100;
   if (target.mount?.current > 0) {

@@ -943,7 +943,7 @@ function accuracyPanels(accuracy,skillName) {
 function attackDamagePanel({weaponDamage,strengthPercent,adjustedDamage,largeBonus,attack}) {
   const source = "武器 " + weaponDamage;
   const lines = strengthPercent ? [[source + " × 力量 " + (100+strengthPercent) + "%",String(adjustedDamage)]] : [[source]];
-  if (largeBonus) lines.push([adjustedDamage + " + 反大 " + largeBonus,String(attack)]);
+  if (largeBonus) lines.push([adjustedDamage + " × 反大 " + (100+largeBonus) + "%",String(attack)]);
   return detailSection("damage","攻击伤害",lines);
 }
 
@@ -952,7 +952,7 @@ function damagePanels(detail) {
   if (!damage && !guard && !mountDamage) return "";
   const calculation = attackDamagePanel(damageCheck);
   if (guard) {
-    const lines = guard.bonusRate ? [["攻击 " + damageCheck.adjustedDamage + " × 破盾效率 " + (100+guard.bonusRate) + "%",String(guard.impact)]] : [];
+    const lines = guard.bonusRate ? [["攻击 " + damageCheck.attack + " × 破盾效率 " + (100+guard.bonusRate) + "%",String(guard.impact)]] : [];
     lines.push([guard.impact > guard.before ? guard.shield + "剩余耐久 " + guard.before + "，实际扣盾 " + guard.blocked :
       guard.shield + "实际扣盾 " + guard.blocked]);
     if (guard.broken) lines.push(["盾牌破碎"]);
