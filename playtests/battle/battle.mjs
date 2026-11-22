@@ -6,7 +6,7 @@ import basicWeapons from "../../data/rules/basic-weapons.json" with { type: "jso
 import { createDialogue } from "./dialogue.mjs";
 import { battleItemCount, battleItemSlots, battleItemsBySlot, battleLoad } from "./loadout.mjs";
 import { adjacent, fieldRanks, fieldSideOf, rankOf } from "./grid.mjs";
-import { assignLeaders, canFight, heavyWoundRatio, isHeavilyWounded, moraleLimit, nearby,
+import { assignLeaders, canFight, heavyWoundRatio, isHeavilyWounded, moraleLimit,
   settleMorale, startMorale, whiteFlag } from "./morale.mjs";
 
 export const catalog = structuredClone({
@@ -522,29 +522,6 @@ function startNextRound(state) {
   return true;
 }
 
-function finishRoundMorale(state) {
-  const fighters = state.units.filter(canFight);
-  const melee = fighters.filter(isMeleeFighter).map(unit=>[unit,reachable(state,unit.id)]);
-  const changes = [];
-  for (const unit of state.units) {
-    const threats = canFight(unit) ? melee.filter(([,targets])=>targets.includes(unit)).map(([opponent])=>opponent) : [];
-    const flankers = threats.filter(opponent=>Math.abs(opponent.column-unit.column)===1);
-    const bothWings = flankers.some(opponent=>opponent.column<unit.column) &&
-      flankers.some(opponent=>opponent.column>unit.column);
-    const forward = rankOf(unit) + (unit.side === "player" ? -1 : 1);
-    const pinned = flankers.length > 0 && threats.some(opponent=>opponent.column===unit.column && rankOf(opponent)===forward);
-    const isolated = bothWings && pinned &&
-      !fighters.some(ally=>ally.side===unit.side && nearby(ally,unit));
-    const pressure = isolated ? 2 : bothWings || pinned ? 1 : 0;
-    if (pressure > (unit.flankPressure ?? 0)) {
-      changes.push([unit,-pressure,isolated ? "陷入两翼包夹" : "陷入侧翼夹击"]);
-    }
-    unit.flankPressure = pressure;
-  }
-  recordMorale(state,{changes});
-  recordMorale(state,{roundEnd:true});
-}
-
 function resolveDefeat(state) {
   for (const side of ["player","enemy"]) {
     const survivors = sideUnits(state,side);
@@ -568,7 +545,7 @@ function advance(state) {
   for (;;) {
     let next = orderedActors(state)[0];
     if (!next) {
-      finishRoundMorale(state);
+      recordMorale(state,{roundEnd:true});
       if (resolveDefeat(state)) return;
       if (reinforcementOptions(state,"player").units.length) {
         state.phase = "reinforcement";
@@ -641,6 +618,13 @@ function flankingBonus(state, actor, target) {
   if (!threatens(actor)) return 0;
   return 5 * state.units.filter(ally=>
     ally.id!==actor.id && ally.side===actor.side && isMeleeFighter(ally) && threatens(ally)).length;
+}
+
+function isFlankingHit(state,actor,target) {
+  if (actor.weapon.range === "远程" || rankOf(actor)!==rankOf(target) || Math.abs(actor.column-target.column)!==1) return false;
+  const forward = rankOf(target) + (target.side === "player" ? -1 : 1);
+  return state.units.some(unit=>unit.side!==target.side && canFight(unit) &&
+    rankOf(unit)===forward && Math.abs(unit.column-target.column)<=1);
 }
 
 export function accuracyFor(actor, target, weather, state, skill) {
@@ -766,7 +750,7 @@ function swapCarriedGear(state, request) {
   note(state,actor.name + "换上了「" + item.name + "」。","item");
 }
 
-function strikeMount(state,actor,target,detail,summary) {
+function strikeMount(state,actor,target,detail,summary,flanked) {
   const mount = target.mount;
   const before = mount.current;
   const {attack} = detail.damageCheck;
@@ -780,8 +764,11 @@ function strikeMount(state,actor,target,detail,summary) {
     target.role = "步兵";
     note(state,target.name + "的战马倒下，在原地改为步战。");
     say(state,target,"dismount");
-    recordMorale(state,{changes:[[target,-1,"坠马受惊"],[actor,1,"击落敌方坐骑"]]});
   }
+  if (dismounted || flanked) recordMorale(state,{changes:[
+    [target,-Number(dismounted)-Number(flanked),[dismounted && "坠马受惊",flanked && "遭侧翼夹击"].filter(Boolean).join("并")],
+    ...(dismounted ? [[actor,1,"击落敌方坐骑"]] : []),
+  ]});
 }
 
 function attack(state, actor, target, roll, skill) {
@@ -823,8 +810,9 @@ function attack(state, actor, target, roll, skill) {
     }
     return;
   }
+  const flanked = isFlankingHit(state,actor,target);
   if (target.mount?.current > 0) {
-    strikeMount(state,actor,target,detail,summary);
+    strikeMount(state,actor,target,detail,summary,flanked);
     say(state,actor,"hit");
     return;
   }
@@ -861,15 +849,23 @@ function attack(state, actor, target, roll, skill) {
     for (const ally of sideUnits(state,target.side)) {
       if (active(ally)) say(state,ally,"allyFall");
     }
-  } else if (hpLoss > 0) {
-    const threshold = target.maxHp*heavyWoundRatio;
-    const heavy = target.hp <= threshold && hpBefore > threshold;
-    say(state,target,heavy ? "heavy" : "light");
-    if (heavy) {
-      const severe = hpLoss>=target.maxHp*.4;
-      recordMorale(state,{changes:[[target,severe ? -2 : -1,severe ? "遭受致命重创" : "陷入重伤"],
-        [actor,1,"重创敌人"]]});
+  } else {
+    const changes = [];
+    if (hpLoss > 0) {
+      const threshold = target.maxHp*heavyWoundRatio;
+      const heavy = target.hp <= threshold && hpBefore > threshold;
+      say(state,target,heavy ? "heavy" : "light");
+      if (heavy) {
+        const severe = hpLoss>=target.maxHp*.4;
+        changes.push([target,severe ? -2 : -1,severe ? "遭受致命重创" : "陷入重伤"],[actor,1,"重创敌人"]);
+      }
     }
+    if (flanked) {
+      const injury = changes.find(([unit])=>unit===target);
+      if (injury) { injury[1]--; injury[2]+="并遭侧翼夹击"; }
+      else changes.push([target,-1,"遭侧翼夹击"]);
+    }
+    if (changes.length) recordMorale(state,{changes});
   }
 }
 
