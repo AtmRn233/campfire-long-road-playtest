@@ -120,6 +120,7 @@ export function retreatProblem(state,actor) {
 
 export function movementOptions(state,actor) {
   if (!canFight(actor)) return {destinations:[],blockedReason:"该角色目前无法移动。"};
+  if (actor.moved) return {destinations:[],blockedReason:"该角色本次行动已经移动，仍可攻击或采取其他行动。"};
   const blockedReason = retreatProblem(state,actor);
   if (blockedReason) return {destinations:[],blockedReason};
   const enemies = controllers(state,actor);
@@ -155,10 +156,13 @@ export function note(state, text, kind = "info", speaker = "", detail) {
 }
 
 function recordMorale(state,event) {
-  settleMorale(state,event,(unit,reason)=>{
+  settleMorale(state,event,(unit,reason,previous)=>{
     const {morale} = unit;
-    const level = morale === whiteFlag ? "举起白旗" : "士气 " + (morale > 0 ? "+" : "") + morale;
-    note(state,unit.name + reason + "，" + level + "。","morale");
+    const delta = morale-previous;
+    const change = (delta > 0 ? "+" : "") + delta;
+    const result = morale === whiteFlag ? "举起白旗" : previous === whiteFlag ? "恢复战斗意志" :
+      "现为" + (morale > 0 ? "+" : "") + morale;
+    note(state,unit.name + reason + "，士气 " + change + "，" + result + "。","morale");
   });
 }
 
@@ -270,7 +274,7 @@ export function createBattle(terrain = "woods", weatherId = "clear", supplies = 
         portraitSprite:character.portraitSprite,
         portraitCropKey:character.portraitCropKey,
         profileResistances:character.profileResistances,
-        preferred:character.row, position, row:character.row, acted:false, statuses:{}, morale:0,
+        preferred:character.row, position, row:character.row, acted:false, moved:false, statuses:{}, morale:0,
         attributes:Object.fromEntries(attributeNames.map(name=>[name,character.attributes?.[name] ?? baseAttribute])),
         dialogue:createDialogue(character.presetId ?? character.id),
         voiceProfile:character.gender === "female" || (character.presetId ?? character.id) === "vera" ? "female" : undefined,
@@ -381,10 +385,8 @@ export function resolveStrike(target, damage, zone, rate = 0, armorBonus = 0) {
 }
 
 export function reinforcementOptions(state,side) {
-  const columns = Object.fromEntries(["front","back"].map(row=>[
-    row,occupancy(state,side,row).length < capacity(state,row) ? vacantColumns(state,side,row) : [],
-  ]));
-  const units = (columns.front.length || columns.back.length) ?
+  const columns = {front:[],back:vacantColumns(state,side,"back")};
+  const units = columns.back.length ?
     occupancy(state,side,"reserve").filter(unit=>unit.morale!==whiteFlag).sort(order).map(unit=>unit.id) : [];
   return {units,columns};
 }
@@ -400,10 +402,8 @@ function reinforceEnemy(state) {
   for (const id of units) {
     const unit = state.units.find(entry=>entry.id===id);
     if (unit.morale === whiteFlag || isHeavilyWounded(unit)) continue;
-    const row = [unit.preferred,unit.preferred === "front" ? "back" : "front"]
-      .find(rank=>columns[rank].length);
-    if (!row) break;
-    enterFromReserve(state,unit,row,columns[row].shift());
+    if (!columns.back.length) break;
+    enterFromReserve(state,unit,"back",columns.back.shift());
   }
 }
 
@@ -517,7 +517,7 @@ function startNextRound(state) {
     return false;
   }
   state.round++;
-  for (const unit of state.units) unit.acted = false;
+  for (const unit of state.units) Object.assign(unit,{acted:false,moved:false});
   note(state,"第 " + state.round + " 回合开始。");
   return true;
 }
@@ -923,8 +923,8 @@ export function action(state, request, roll = Math.random) {
     if (type === "reinforce") {
       const {units,columns} = reinforcementOptions(state,"player");
       if (!units.includes(request.actor)) throw new Error("请选择一名我方预备队角色");
-      if (!["front","back"].includes(request.row) || !columns[request.row].includes(request.column)) {
-        throw new Error("请选择我方阵线的空位");
+      if (request.row !== "back" || !columns.back.includes(request.column)) {
+        throw new Error("请选择我方后排的空位");
       }
       enterFromReserve(state,state.units.find(unit=>unit.id===request.actor),request.row,request.column);
     }
@@ -943,10 +943,10 @@ export function action(state, request, roll = Math.random) {
     if (!destinations.some(spot=>spot.fieldSide===fieldSide && spot.row===row && spot.column===column)) {
       throw new Error(blockedReason || "请选择移动范围内可通行的空格。");
     }
-    Object.assign(actor,{fieldSide,row,column,acted:true});
+    Object.assign(actor,{fieldSide,row,column,moved:true});
     const line = (fieldSide === "player" ? "我方" : "敌方") + (row === "front" ? "前排" : "后排");
     note(state,actor.name+"移动到"+line+"。");
-    advance(state);
+    recordMorale(state,{reinforced:actor});
   } else if (type === "item") {
     useRestoration(state,request,roll);
     advance(state);

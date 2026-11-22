@@ -54,7 +54,7 @@ export function settleMorale(state, event, report) {
     changes = [...changes,[actor,counterkill || doubleKill ? 2 : 1,
       doubleKill ? "一举击倒多名敌人" : counterkill ? "带伤反杀" : "击倒敌人"]];
     for (const ally of state.units.filter(unit=>unit.side===actor.side && onField(unit) && unit.morale===whiteFlag)) {
-      changes.push([ally,1,"见队友击倒敌人，放下白旗"]);
+      changes.push([ally,1,"见队友击倒敌人"]);
     }
   }
 
@@ -106,7 +106,7 @@ export function settleMorale(state, event, report) {
       }
       if (mark(team,"frontRecovered",event.reinforced?.side===side && event.reinforced.row==="front" &&
           team.milestones.has("frontBroken") && frontCount(side)>=2)) {
-        teamChange(side,1,"因前排补位重整");
+        teamChange(side,1,"因前排重新集结");
       }
       if (event.roundEnd && mark(team,"outnumbered",team.outnumberedByLoss && outnumbered(count(side),count(theirs)))) {
         teamChange(side,-1,"因减员陷入两倍兵力劣势");
@@ -129,7 +129,7 @@ export function settleMorale(state, event, report) {
   }
   if (roundEnd) for (const side of sides) teams[side].outnumberedByLoss = false;
   for (const [unit,{reason}] of selected) {
-    if (unit.morale !== original.get(unit)) report(unit,reason);
+    if (unit.morale !== original.get(unit)) report(unit,reason,original.get(unit));
   }
 }
 import { fieldSideOf, rankOf } from "./grid.mjs";

@@ -90,7 +90,7 @@ body[data-lighting] .board > .weather-visual[data-weather="clear"]{opacity:0}
 .profession-mark{left:var(--card-padding);bottom:var(--card-padding);width:21px;height:20px;border:1px solid #97846c96;border-radius:3px;background:#17272dea;font-size:13px;line-height:1}
 .morale-mark.raised{--eagle-color:#ffd277;border-color:#bd975a;background:#3a2c1d}
 .morale-mark.shaken{--eagle-color:#bdc1c9;border-color:#858d98;background:#30363e}
-.morale-mark.routed{border-color:#e4e6de;background:#252d36;color:#fff;font-size:15px}
+.card .morale-mark.routed{left:50%;top:50%;transform:translate(-50%,-50%);width:clamp(48px,30cqi,70px);height:clamp(48px,30cqi,70px);z-index:3;border:1px solid #e4e6de99;border-radius:8px;background:#18212dd9;color:#fff;font-size:clamp(40px,25cqi,58px);line-height:1;filter:drop-shadow(0 2px 5px #000)}
 .morale-eagle{position:relative;width:17px;height:10px;flex:none;filter:drop-shadow(0 1px 0 #121b22)}
 .morale-eagle + .morale-eagle{margin-top:-6px}
 .morale-eagle::before{content:"";position:absolute;inset:0;background:var(--eagle-color);clip-path:polygon(0 32%,20% 40%,38% 55%,44% 41%,45% 25%,56% 18%,66% 31%,57% 38%,61% 55%,82% 39%,100% 32%,91% 62%,83% 58%,73% 74%,62% 69%,58% 89%,50% 100%,42% 89%,38% 69%,27% 74%,17% 58%,9% 62%)}
@@ -152,6 +152,10 @@ body[data-lighting] .board > .weather-visual[data-weather="clear"]{opacity:0}
 .damage{z-index:2;top:0;display:grid;gap:2px;line-height:1.35;color:#ffe6a6;font-size:15px;text-shadow:0 2px 3px #000,0 0 9px #1d0c04;animation:drift 1.3s ease-out forwards}
 .damage .wound{color:#ffc4bc;font-weight:800}
 .damage.missed{color:#f2bcb0}
+.morale-change{position:absolute;z-index:3;transform:translate(-50%,0);width:max-content;max-width:240px;padding:5px 9px;border:2px solid;border-radius:5px;background:#17232df2;font-size:18px;font-weight:800;line-height:1.25;text-align:center;white-space:nowrap;text-shadow:0 1px 3px #000;box-shadow:0 3px 12px #000a;animation:morale-drift 2s ease-out forwards}
+.morale-change.rising{color:#b9ffd0;border-color:#6ed598}
+.morale-change.falling{color:#ffd1c5;border-color:#ed8b7e}
+@keyframes morale-drift{0%{opacity:0;translate:0 8px}12%,80%{opacity:1}100%{opacity:0;translate:0 -22px}}
 .card.impact{animation:impact .55s ease-out}
 .casualty{position:absolute;z-index:1;pointer-events:none}
 .casualty-piece{position:absolute;inset:0;animation:split-casualty .56s ease-out forwards}
@@ -382,7 +386,7 @@ button.roll-key:hover,button.roll-key[aria-pressed="true"]{border-color:var(--st
 .leave-dialog p{margin:10px 0 18px;line-height:1.65}
 .leave-dialog form{display:flex;justify-content:flex-end;gap:8px}
 @container(max-width:165px){.card-select{--portrait-width:clamp(30px,36cqi,55px);--card-gap:6px}}
-@container(max-width:132px){.card:has(.portrait-statuses) .morale-mark{top:auto;bottom:calc(var(--card-padding) + 22px)}}
+@container(max-width:132px){.card:has(.portrait-statuses) .morale-mark:not(.routed){top:auto;bottom:calc(var(--card-padding) + 22px)}}
 @container(max-width:125px){.card strong{font-size:13px;padding-right:19px}}
 @container(max-width:105px){.card-select{display:block;padding-top:26px}.face{display:none}}
 @container(max-width:105px){.card-portrait{position:static}.portrait-statuses{top:var(--card-padding);right:var(--card-padding)}.leader-card .portrait-statuses{right:calc(var(--card-padding) + 20px)}}
@@ -477,7 +481,7 @@ body[data-lighting="lit"] .encounter-screen{background:radial-gradient(ellipse a
 }
 @media(max-width:580px){
   .embedded .cards .card-select{padding-top:20px}
-  .embedded .cards .morale-mark{width:17px;height:14px}
+  .embedded .cards .morale-mark:not(.routed){width:17px;height:14px}
   .embedded .cards .unit-menu{height:14px}
   .embedded .cards .card-data{gap:1px}
   .embedded .cards .card strong{line-height:17px;padding-right:0}

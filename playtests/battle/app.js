@@ -322,18 +322,20 @@ function receive(next) {
     aiming = moving = false;
   }
   if (!canAct(byId(selected))) aiming = moving = false;
+  if (byId(selected)?.moved) moving = false;
   if (frontier && previous?.phase === "setup" && state.phase === "ended") {
     reportToolbar();
     return reportFrontierResult();
   }
   render();
+  const moraleChanged = showMoraleChanges(previous);
   if (state.phase === "ended" && (previous?.phase !== "ended" || previous?.match !== state.match)) {
     const result = state.winner === "player" ? "我方获胜" : "敌方获胜";
     const ending = {surrender:"全队溃败 · ",withdrawal:"撤离战场 · "};
     showBattleBanner((ending[state.endReason] ?? "") + result);
     if (previous) {
       playBattleSound(state.winner === "player" ? "victory" : "defeat",freshStrike ? .54 : 0);
-      victoryTimer = setTimeout(openBattleReport,850);
+      victoryTimer = setTimeout(openBattleReport,moraleChanged ? 2100 : 850);
     }
     else openBattleReport();
   } else if (state.phase === "setup") {
@@ -402,7 +404,7 @@ function renderCard(unit,column,entry,preview=false,formationSlot) {
   if (statuses.some(([id])=>id==="dodge")) classes.push("evading");
   const morale = unit.morale;
   const tone = morale === whiteFlag ? "routed" : morale > 0 ? "raised" : morale < 0 ? "shaken" : "steady";
-  const marker = morale === whiteFlag ? "⚑" : '<i class="morale-eagle" aria-hidden="true"></i>'.repeat(Math.max(1,Math.abs(morale)));
+  const marker = morale === whiteFlag ? "🏳️" : '<i class="morale-eagle" aria-hidden="true"></i>'.repeat(Math.max(1,Math.abs(morale)));
   const profession = unit.profession || unit.role || "职业未定";
   const cardMeter = (kind,label,part,tag) => meter(kind,label,part.current,part.max,tag,inBattle ? unit.id : undefined);
   const resource = (unit.mount ? cardMeter("mount","骑",unit.mount) : "") ||
@@ -560,7 +562,7 @@ function renderControls() {
   $("restart-battle").hidden = frontier || state.phase !== "ended";
   $("reinforcement-actions").hidden = state.phase !== "reinforcement";
   if (state.reinforcements) {
-    $("reinforcement-hint").textContent = reinforcementUnit ? byId(reinforcementUnit).name + " · 选择我方空位" : "回合末补位 · 选择我方预备队";
+    $("reinforcement-hint").textContent = reinforcementUnit ? byId(reinforcementUnit).name + " · 选择我方后排空位" : "回合末补位 · 预备队仅进入我方后排";
     $("finish-reinforcement").textContent = state.units.some(unit=>unit.side === "player" && unit.row !== "reserve")
       ? "结束补位" : "撤离战场";
   }
@@ -1313,6 +1315,28 @@ function cardPoint(id) {
   const board = $("board").getBoundingClientRect();
   const left = box.left-board.left, top = box.top-board.top;
   return {x:left+box.width/2,y:top+box.height/2,left,top,width:box.width,height:box.height,card};
+}
+
+function showMoraleChanges(previous) {
+  if (!previous || previous.match !== state.match) return false;
+  let changed = false;
+  for (const unit of state.units) {
+    const prior = previous.units.find(entry=>entry.id===unit.id);
+    if (!prior || prior.morale === unit.morale || unit.row === "reserve") continue;
+    const point = cardPoint(unit.id);
+    if (!point) continue;
+    const delta = unit.morale-prior.morale;
+    const effect = document.createElement("div");
+    effect.className = "morale-change " + (delta>0 ? "rising" : "falling");
+    effect.textContent = unit.morale === whiteFlag ? "🏳️ 举起白旗" :
+      (prior.morale === whiteFlag ? "恢复战斗意志 · " : "") + "士气 " + (delta>0 ? "+" : "−") + Math.abs(delta);
+    effect.style.left = point.x + "px";
+    effect.style.top = point.top+point.height-8 + "px";
+    $("effects").append(effect);
+    setTimeout(()=>effect.remove(),2000);
+    changed = true;
+  }
+  return changed;
 }
 
 function showSpeech() {
