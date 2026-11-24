@@ -411,7 +411,7 @@
     ctx.restore();
   }
 
-  function paintNames(ctx, map, showLabels) {
+  function paintNames(ctx, map, showLabels, isKnown) {
     ctx.save();
     ctx.font = '700 16px "Microsoft YaHei", sans-serif';
     ctx.textAlign = 'center';
@@ -424,6 +424,7 @@
       ? [...map.sites].sort((a,b) => Number(b.name.length >= 5) - Number(a.name.length >= 5))
       : map.sites;
     for (const site of sites) {
+      if (isKnown && !isKnown(site.x, site.y)) continue;
       const { hideLabel, settlement } = MapData.siteTypes[site.type];
       if (hideLabel) continue;
       if (!showLabels && site.type !== 'frontier-town') continue;
@@ -454,10 +455,11 @@
     ctx.restore();
   }
 
-  function visibleRegions(map) {
+  function visibleRegions(map, isKnown) {
     const groups = new Map(map.regions.map((region) => [region.id, { region, cells: [] }]));
     for (let y = 0; y < map.height; y++) {
       for (let x = 0; x < WIDTH; x++) {
+        if (isKnown && !isKnown(x, y)) continue;
         const region = regionAt(map, x, y);
         if (region) groups.get(region.id).cells.push({ x, y });
       }
@@ -567,7 +569,7 @@
         }
       }
     }
-    const regions = view.regionNames === false ? new Map() : visibleRegions(map);
+    const regions = view.regionNames === false ? new Map() : visibleRegions(map, view.isKnown);
     paintRegionHover(ctx, map, regionHoverCells(map, view.hoveredRegion));
     paintFrame(ctx, view.selected);
     for (const site of map.sites) paintSite(ctx, site, site.id === view.ghost?.id ? .35 : 1);
@@ -575,7 +577,7 @@
       const townDistrict = map.kind === 'town' && !group.region.terrains.length;
       if (id !== view.hoveredRegion && !townDistrict) paintRegionName(ctx, group);
     }
-    paintNames(ctx, map, view.labels);
+    paintNames(ctx, map, view.labels, view.isKnown);
     paintRegionName(ctx, regions.get(view.hoveredRegion), true);
     if (view.ghost) {
       paintFrame(ctx, view.ghost, !view.valid);

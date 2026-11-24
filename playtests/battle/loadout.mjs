@@ -1,5 +1,5 @@
-export const battleItemSlots = 3;
-export const battleItemLabels = ["道具一","道具二","道具三"];
+export const battleItemLabels = ["道具一","道具二","道具三","道具四"];
+export const battleItemSlots = battleItemLabels.length;
 export const battleItemCount = (items) => items.reduce((count,item)=>count+item.qty,0);
 
 export function battleItemsBySlot(items) {

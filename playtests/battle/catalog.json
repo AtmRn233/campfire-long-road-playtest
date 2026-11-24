@@ -13,29 +13,29 @@
       "damage": 40,
       "headBonus": 0,
       "initiative": -2,
-      "penetration": 0.3,
-      "armorBonus": 0.2,
-      "shieldBonus": 0.1
+      "penetration": 0.2,
+      "armorBonus": 0.1,
+      "shieldBonus": 0.6
     },
     "矛": {
       "name": "矛",
       "range": "短",
-      "damage": 40,
+      "damage": 60,
       "headBonus": 0,
       "initiative": -2,
-      "penetration": 0.25,
-      "armorBonus": 0,
-      "shieldBonus": 0
+      "penetration": 0.4,
+      "armorBonus": -0.25,
+      "shieldBonus": -0.2
     },
     "长剑": {
       "name": "长剑",
       "range": "短",
-      "damage": 80,
+      "damage": 70,
       "headBonus": 0.05,
       "initiative": -2,
       "penetration": 0.25,
       "armorBonus": 0,
-      "shieldBonus": 0.1
+      "shieldBonus": 0.05
     },
     "长柄刀": {
       "name": "长柄刀",
@@ -43,10 +43,10 @@
       "damage": 70,
       "headBonus": 0,
       "initiative": -3,
-      "penetration": 0.3,
-      "armorBonus": -0.1,
+      "penetration": 0.2,
+      "armorBonus": 0.05,
       "largeBonus": 0.05,
-      "shieldBonus": 0
+      "shieldBonus": 0.15
     },
     "弓": {
       "name": "弓",
@@ -56,7 +56,7 @@
       "initiative": -1,
       "penetration": 0.35,
       "armorBonus": -0.45,
-      "shieldBonus": 0
+      "shieldBonus": -0.15
     },
     "弩": {
       "name": "弩",
@@ -66,7 +66,7 @@
       "initiative": -2,
       "penetration": 0.5,
       "armorBonus": -0.3,
-      "shieldBonus": 0
+      "shieldBonus": -0.1
     },
     "法杖": {
       "name": "法杖",
@@ -88,41 +88,41 @@
     },
     "棉甲": {
       "name": "棉甲",
-      "durability": 70,
+      "durability": 60,
       "initiative": -1
     },
     "皮甲": {
       "name": "皮甲",
-      "durability": 80,
+      "durability": 70,
       "initiative": -2
     },
     "链甲": {
       "name": "链甲",
-      "durability": 130,
+      "durability": 120,
       "initiative": -3,
       "attributeCap": 2
     },
     "鳞甲": {
       "name": "鳞甲",
-      "durability": 240,
+      "durability": 180,
       "initiative": -6,
       "attributeCap": 1
     },
     "扎甲": {
       "name": "扎甲",
-      "durability": 230,
+      "durability": 160,
       "initiative": -6,
       "attributeCap": 1
     },
     "板甲": {
       "name": "板甲",
-      "durability": 320,
+      "durability": 240,
       "initiative": -8,
       "attributeCap": 0
     },
     "布帽": {
       "name": "布帽",
-      "durability": 20,
+      "durability": 15,
       "initiative": 0
     },
     "皮帽": {
@@ -132,43 +132,43 @@
     },
     "链甲头罩": {
       "name": "链甲头罩",
-      "durability": 40,
+      "durability": 45,
       "initiative": -1,
       "attributeCap": 3
     },
     "鼻翼盔": {
       "name": "鼻翼盔",
-      "durability": 50,
+      "durability": 55,
       "initiative": -1,
       "attributeCap": 3
     },
     "锅盔": {
       "name": "锅盔",
-      "durability": 60,
+      "durability": 65,
       "initiative": -1,
       "attributeCap": 3
     },
     "平顶盔": {
       "name": "平顶盔",
-      "durability": 60,
+      "durability": 70,
       "initiative": -1,
       "attributeCap": 2
     },
     "开面盔": {
       "name": "开面盔",
-      "durability": 100,
+      "durability": 85,
       "initiative": -2,
       "attributeCap": 3
     },
     "扎甲盔": {
       "name": "扎甲盔",
-      "durability": 130,
+      "durability": 85,
       "initiative": -3,
       "attributeCap": 1
     },
     "全覆头盔": {
       "name": "全覆头盔",
-      "durability": 150,
+      "durability": 110,
       "initiative": -4,
       "attributeCap": 0
     },
@@ -176,25 +176,25 @@
       "name": "小圆盾",
       "durability": 50,
       "initiative": -1,
-      "blockBonus": 10
+      "blockBonus": 5
     },
     "圆盾": {
       "name": "圆盾",
-      "durability": 70,
+      "durability": 75,
       "initiative": -2,
       "blockBonus": 15
     },
     "扇形盾": {
       "name": "扇形盾",
-      "durability": 100,
+      "durability": 95,
       "initiative": -3,
       "blockBonus": 20
     },
     "筝形盾": {
       "name": "筝形盾",
-      "durability": 140,
+      "durability": 120,
       "initiative": -3,
-      "blockBonus": 15
+      "blockBonus": 20
     }
   },
   "terrain": [

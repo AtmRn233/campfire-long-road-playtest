@@ -1,4 +1,4 @@
-import { fastestRoute, isImpassableTerrain, isRoadBridge, isWaterway, sightRange, stepCost, terrainAt, travelLevelFor, weatherStopsTorch } from "./movement.mjs";
+import { fastestRoute, formatTravelDuration, isImpassableTerrain, isRoadBridge, isWaterway, sightRange, stepCost, terrainAt, terrainMovementHours, weatherStopsTorch } from "./movement.mjs";
 
 const $ = id => document.getElementById(id);
 const canvas = $("map");
@@ -17,18 +17,12 @@ let route = null;
 let timer;
 const weatherKey = () => $("weather").value;
 const favoredTerrains = () => settings.races.find(race => race.id === $("race").value)?.terrains ?? [];
+const travelers = () => [{speed:settings.races.find(race => race.id === $("race").value)?.speed ?? 100,terrains:favoredTerrains()}];
 const coords = cell => `X ${cell.x + 1} · Y ${cell.y + 1}`;
 const equal = (a, b) => a.x === b.x && a.y === b.y;
 const range = () => sightRange(settings.map, visitor, settings.weather, weatherKey(), light, time);
 const visible = (cell, sight) => Math.max(Math.abs(cell.x-visitor.x), Math.abs(cell.y-visitor.y)) <= sight;
 const restricted = cell => $("fog").checked && !visible(cell, range());
-
-function formatDuration(hours) {
-  const days = Math.floor(hours / 24);
-  const rest = hours % 24;
-  if (!days) return `${hours} 小时`;
-  return rest ? `${days} 天 ${rest} 小时` : `${days} 天`;
-}
 
 function revealTraveler(center = false) {
   const cellWidth = canvas.offsetWidth / settings.map.width;
@@ -71,18 +65,18 @@ function describe() {
   const road = !isImpassableTerrain(terrain) && terrain !== "shallows" && (!water || isRoadBridge(map,selected)) &&
     map.roads[MapModel.cellIndex(selected.x, selected.y)] && MapModel.roadMask(map, selected.x, selected.y);
   const favored = favoredTerrains();
-  const level = travelLevelFor(travel, road ? "road" : terrain, favored);
+  const hours = terrainMovementHours(travel, road ? "road" : terrain, travelers());
   const reason = water && !road ? "（乘船）" : road ? "（沿路）" : favored.includes(terrain) ? "（擅长）" : "";
   $("terrain").textContent = hidden ? "未看清" : name;
-  $("movement").textContent = hidden ? "—" : level ? `${level.label}${reason}` : "不可通行";
+  $("movement").textContent = hidden ? "—" : hours === undefined ? "不可通行" : formatTravelDuration(hours) + reason;
   $("place").textContent = location?.name ?? (hidden ? "未探索" : name);
   $("lore").textContent = location ? lore[location.id] ?? "" : "";
-  $("route-info").textContent = route?.steps.length ? formatDuration(route.hours) : "—";
+  $("route-info").textContent = route?.steps.length ? formatTravelDuration(route.hours) : "—";
   $("stop").disabled = !timer;
   $("torch").disabled = weatherStopsTorch(weatherKey());
   $("extinguish").disabled = !light;
   const source = light?.kind === "torch" ? "火把" : "提灯";
-  $("light").textContent = light ? `${source}剩余 ${formatDuration(Math.ceil(light.until-time))}` : "";
+  $("light").textContent = light ? `${source}剩余 ${formatTravelDuration(light.until-time)}` : "";
 }
 
 function draw() {
@@ -92,7 +86,7 @@ function draw() {
 }
 
 function walk(to) {
-  const result = stepCost(settings.map, visitor, to, settings.travel, $("boat").checked, favoredTerrains());
+  const result = stepCost(settings.map, visitor, to, settings.travel, $("boat").checked, [], travelers());
   if (result.error) {
     $("notice").textContent = result.error;
     return null;
@@ -115,7 +109,7 @@ function pauseTrip() {
 function planRoute(cell) {
   pauseTrip();
   selected = cell;
-  route = fastestRoute(settings.map, visitor, selected, settings.travel, $("boat").checked, favoredTerrains());
+  route = fastestRoute(settings.map, visitor, selected, settings.travel, $("boat").checked, [], travelers());
   $("notice").textContent = route ? "" : "没有可通行的路线";
   draw();
 }

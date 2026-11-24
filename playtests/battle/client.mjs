@@ -28,10 +28,27 @@ function equipArmor(piece, shield = false) {
   const {durability = base?.durability, attribute_cap = base?.attributeCap, block_bonus, initiative = base?.initiative} = piece.rule ?? {};
   const blockBonus = block_bonus === undefined ? base?.blockBonus : block_bonus * 100;
   if (durability === undefined || (shield && blockBonus === undefined && !piece.rule?.category.includes("盾"))) return undefined;
-  return {name:piece.name,durability,current:piece.current,attributeCap:attribute_cap,blockBonus,initiative};
+  return {name:piece.name,impactKind:piece.impactKind,durability,current:piece.current,attributeCap:attribute_cap,blockBonus,initiative};
 }
 
-export function applyBattleCatalog(weather, gear, mounts = defaultMounts, player, roster, encounterWeather, allies = [], ammo, partyMemberIds, enemies) {
+export function battleParticipantGear(unit) {
+  const itemFor = item => {
+    if (!item?.swap) return item;
+    const {slot,gear} = item.swap;
+    return {...item,swap:{slot,gear:slot === "main_hand" ? equipWeapon(gear) : equipArmor(gear,true)}};
+  };
+  return {
+    ...unit,
+    weapon:equipWeapon(unit.weapon,unit.weaponBase),
+    head:equipArmor(unit.head),
+    body:equipArmor(unit.body),
+    shield:equipArmor(unit.shield,true),
+    items:unit.items?.map(itemFor),
+    handItems:Object.fromEntries(Object.entries(unit.handItems ?? {}).map(([slot,item])=>[slot,itemFor(item)])),
+  };
+}
+
+export function applyBattleCatalog(weather, gear, mounts = defaultMounts, player, roster, encounterWeather, allies = [], ammo, partyMemberIds, enemies, encounter) {
   catalog.mounts = mounts;
   for (const [name,rule] of Object.entries(gear)) {
     if (rule?.weight_kg !== undefined) catalog.gearWeights[name] = rule.weight_kg;
@@ -69,21 +86,7 @@ export function applyBattleCatalog(weather, gear, mounts = defaultMounts, player
     if (rule.block_bonus !== undefined) armor.blockBonus = rule.block_bonus * 100;
   }
   if (player) {
-    const itemFor = item => {
-      if (!item?.swap) return item;
-      const {slot,gear} = item.swap;
-      return {...item,swap:{slot,gear:slot === "main_hand" ? equipWeapon(gear) : equipArmor(gear,true)}};
-    };
-    const gearFor = unit => ({
-      ...unit,
-      weapon:equipWeapon(unit.weapon,unit.weaponBase),
-      head:equipArmor(unit.head),
-      body:equipArmor(unit.body),
-      shield:equipArmor(unit.shield,true),
-      items:unit.items?.map(itemFor),
-      handItems:Object.fromEntries(Object.entries(unit.handItems ?? {}).map(([slot,item])=>[slot,itemFor(item)])),
-    });
-    battleSession.beginEncounter(gearFor(player),encounterWeather,allies.map(gearFor),ammo,partyMemberIds,enemies?.map(gearFor));
+    battleSession.beginEncounter(battleParticipantGear(player),encounterWeather,allies.map(battleParticipantGear),ammo,partyMemberIds,enemies?.map(battleParticipantGear),encounter);
   } else if (battleSession.snapshot().phase === "setup") battleSession.submit({ type: "reset" });
 }
 
@@ -92,7 +95,7 @@ export const battleSession = createBattleSession();
 if (typeof window !== "undefined") {
   window.addEventListener("message", event => {
     if (event.origin !== location.origin || event.source !== window.parent || event.data?.type !== "campfire-battle") return;
-    const { weather, gear, mounts, player, roster, encounterWeather, allies, ammo, partyMemberIds, enemies } = event.data;
-    applyBattleCatalog(weather, gear, mounts, player, roster, encounterWeather, allies, ammo, partyMemberIds, enemies);
+    const { weather, gear, mounts, player, roster, encounterWeather, allies, ammo, partyMemberIds, enemies, encounter } = event.data;
+    applyBattleCatalog(weather, gear, mounts, player, roster, encounterWeather, allies, ammo, partyMemberIds, enemies, encounter);
   });
 }

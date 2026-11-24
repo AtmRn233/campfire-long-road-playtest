@@ -1,11 +1,11 @@
 :root {
   color-scheme: dark;
   font: 15px/1.55 "Microsoft YaHei", sans-serif;
-  color: #eadfc5;
-  background: #1a1814;
-  --line: #584b37;
-  --accent: #eed195;
-  --muted: #bfae8d;
+  color: #f0e7d3;
+  background: #24221a;
+  --line: #716149;
+  --accent: #edc897;
+  --muted: #c4b69c;
 }
 
 * { box-sizing: border-box; }
@@ -21,7 +21,7 @@ body { margin: 0; }
   min-width: 0;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: #252119;
+  background: linear-gradient(155deg, #39372a, #2c291f);
 }
 .location-panel, .action-panel { padding: 16px; }
 .location-panel { max-height: calc(100dvh - 16px); margin-block-start: 8px; overflow: auto; }

@@ -20,6 +20,8 @@
     #map-layers [aria-pressed="true"] { color: #f6d898; border-color: #b68a4a; background: #4c3826; }
     #lore { font-size: .86rem; margin: 9px 0; }
     #region { display: block; color: #f5e6bd; min-height: 1.5em; }
+    #teams small { display: block; color: #e4cfab; }
+    #teams div + div { margin-top: 5px; }
     .details section { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
     #status { padding: 8px 12px; margin: 0; }
     [hidden] { display: none !important; }
@@ -41,6 +43,7 @@
         <div class="reading" id="difficulty" hidden><dt>移动难度</dt><dd id="movement"></dd></div>
       </dl>
       <p id="lore"></p>
+      <section id="teams" aria-label="队伍信息" hidden></section>
       <output id="region" role="status" aria-label="区域"></output>
       <section class="atlas-options" aria-label="地图显示">
         <label><input type="checkbox" id="grid" checked> 网格</label>

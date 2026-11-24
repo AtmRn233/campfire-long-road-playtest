@@ -1,0 +1,101 @@
+Selected battle audio — local selection 2026-11-23
+Changes: silence-based extraction where indicated, peak normalized to 0.5, converted to PCM WAV. No pitch shift baked into the files.
+
+S0430 — 20 Sword Sound Effects (Attacks and Clashes) / sword_clash.10
+Author: StarNinjas
+Source: https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
+License: CC0-1.0
+Original: sources/swords-starninjas/originals/sword_clash.10.ogg; segment 0.0–0.848 seconds
+
+S0602 — 3 Melee sounds / sword sound
+Author: remaxim
+Source: https://lpc.opengameart.org/content/3-melee-sounds
+License: CC0-1.0
+Original: sources/melee-three/originals/melee sounds/sword sound.wav; segment 0.0–0.539 seconds
+
+S2224 — Swish - bamboo stick weapon swhoshes / swosh-19
+Author: qubodup
+Source: https://lpc.opengameart.org/content/swish-bamboo-stick-weapon-swhoshes
+License: CC0-1.0
+Original: sources/bamboo-swishes/originals/swosh-19.flac; segment 0.0–0.394 seconds
+
+S0927 — Battle Sound Effects / Bow
+Author: artisticdude
+Source: https://lpc.opengameart.org/content/battle-sound-effects
+License: CC0-1.0
+Original: sources/battle-ogrebane/originals/battle_sound_effects/Bow.wav; segment 0.0–0.549 seconds
+
+S0926 — Medieval sound effects - Weapon Textures / Crossbow Shoot · 片段 06/6
+Author: Ben Jaszczak & Brian Nelson
+Source: https://opengameart.org/content/medieval-sound-effects-weapon-textures
+License: CC0-1.0
+Original: sources/medieval-textures/originals/Crossbow Shoot.wav; segment 2.94–3.16 seconds
+
+S0912 — Bow & Arrow Shot / shoot
+Author: dorkster
+Source: https://lpc.opengameart.org/content/bow-arrow-shot
+License: CC-BY-SA-3.0
+Original: sources/bow-shot/originals/shoot.ogg; segment 0.0–0.449 seconds
+
+S0667 — 100 CC0 metal and wood SFX / metal_sheet_01
+Author: rubberduck
+Source: https://opengameart.org/content/100-cc0-metal-and-wood-sfx
+License: CC0-1.0
+Original: sources/metal-wood-rubberduck/originals/metal_sheet_01.ogg; segment 0.0–0.442 seconds
+
+S0644 — 37 hits/punches / hit36.mp3
+Author: Independent.nu
+Source: https://lpc.opengameart.org/content/37-hitspunches
+License: CC0-1.0
+Original: sources/punches/originals/hits/hit36.mp3.flac; segment 0.0–0.863 seconds
+
+S0633 — 37 hits/punches / hit25.mp3
+Author: Independent.nu
+Source: https://lpc.opengameart.org/content/37-hitspunches
+License: CC0-1.0
+Original: sources/punches/originals/hits/hit25.mp3.flac; segment 0.0–0.732 seconds
+
+S0630 — 37 hits/punches / hit22.mp3
+Author: Independent.nu
+Source: https://lpc.opengameart.org/content/37-hitspunches
+License: CC0-1.0
+Original: sources/punches/originals/hits/hit22.mp3.flac; segment 0.0–0.994 seconds
+
+S2478 — Fleshy Fight Sounds / 箭矢刺入轻甲／肉体 A
+Author: Will Leamon
+Source: https://opengameart.org/content/fleshy-fight-sounds
+License: OGA-BY-3.0
+Original: sources/fleshy-fight/originals/piercing-1a.wav; segment 0.0–0.377 seconds
+Changes: peak normalized to 0.5; single flybys cropped with 6ms fades.
+
+S2480 — Fleshy Fight Sounds / 箭矢命中重甲 A
+Author: Will Leamon
+Source: https://opengameart.org/content/fleshy-fight-sounds
+License: OGA-BY-3.0
+Original: sources/fleshy-fight/originals/piercing-arm-2a.wav; segment 0.0–0.377 seconds
+Changes: peak normalized to 0.5; single flybys cropped with 6ms fades.
+
+S2482 — Medieval sound effects - Weapon Textures / 箭矢落空 · 单次掠过
+Author: Ben Jaszczak & Brian Nelson
+Source: https://opengameart.org/content/medieval-sound-effects-weapon-textures
+License: CC0-1.0
+Original: sources/medieval-textures/originals/Scythian Recurve Arrow Pass.wav; segment 0.52–1.04 seconds
+Changes: peak normalized to 0.5; single flybys cropped with 6ms fades.
+
+S2483 — Medieval sound effects - Weapon Textures / 弩矢落空 · 单次掠过
+Author: Ben Jaszczak & Brian Nelson
+Source: https://opengameart.org/content/medieval-sound-effects-weapon-textures
+License: CC0-1.0
+Original: sources/medieval-textures/originals/Crossbow Bolt Pass.wav; segment 0.53–1.08 seconds
+Changes: peak normalized to 0.5; single flybys cropped with 6ms fades.
+
+Additional Sound FX by Will Leamon
+
+Playback alignment: selectedAudio.mjs skips leading silence at playback using per-file offsets; WAV files remain unchanged. Audition sequence mixes use the same offsets.
+
+S2205 — 35 wooden cracks/hits/destructions / Shield break (impact + crack)
+Author: Independent.nu
+Source: https://lpc.opengameart.org/content/35-wooden-crackshitsdestructions
+License: CC0-1.0 (see licenses/CC0-1.0.txt)
+Original: sources/wood-cracks/originals/wood_impact/crack10.mp3.flac
+Changes: audition WAV copied unchanged; playback skips 0.15 seconds of leading silence. Plays once instead of normal shield impact and legacy break.

@@ -6,7 +6,7 @@ import basicWeapons from "../../data/rules/basic-weapons.json" with { type: "jso
 import { createDialogue } from "./dialogue.mjs";
 import { battleItemCount, battleItemSlots, battleItemsBySlot, battleLoad, carryKgPerStrength } from "./loadout.mjs";
 import { adjacent, fieldRanks, fieldSideOf, rankOf } from "./grid.mjs";
-import { assignLeaders, canFight, heavyWoundRatio, isHeavilyWounded, moraleLimit,
+import { canFight, heavyWoundRatio, isHeavilyWounded, moraleLimit,
   settleMorale, startMorale, whiteFlag } from "./morale.mjs";
 
 export const catalog = structuredClone({
@@ -19,7 +19,7 @@ const enemySkills = {
 };
 const roster = [
   ...allyPresets,
-  {id:"garrick", name:"加里克", role:"劫掠首领", side:"enemy", weapon:"长柄刀", body:"皮甲", head:"链甲头罩", row:"front", skills:["measured_strike"],
+  {id:"garrick", name:"加里克", role:"劫掠者", side:"enemy", weapon:"长柄刀", body:"皮甲", head:"链甲头罩", row:"front", skills:["measured_strike"],
     additionalGear:[{slot:"accessory",label:"首饰",name:"胸针"},{slot:"feet",label:"鞋子",name:"长靴"}]},
   {id:"bren", name:"布伦", role:"斧手", side:"enemy", weapon:"手斧", body:"棉甲", head:"鼻翼盔", shield:"小圆盾", row:"front", skills:["second_wind"],
     additionalGear:[{slot:"wrists",label:"手腕",name:"手套"},{slot:"belt",label:"腰带",name:"腰带"}]},
@@ -54,7 +54,7 @@ const order = (a, b) => a.position - b.position;
 const figure = (part) => {
   const gear = typeof part === "string" ? catalog.armor[part] : part;
   const max = Math.round(gear?.durability ?? 0);
-  return {name:gear?.name ?? "无",max,current:Math.max(0,Math.min(max,gear?.current ?? max)),attributeCap:gear?.attributeCap,blockBonus:gear?.blockBonus,initiative:gear?.initiative};
+  return {name:gear?.name ?? "无",impactKind:gear?.impactKind,max,current:Math.max(0,Math.min(max,gear?.current ?? max)),attributeCap:gear?.attributeCap,blockBonus:gear?.blockBonus,initiative:gear?.initiative};
 };
 const attributeNames = ["strength","dexterity","constitution","intelligence","perception","charisma"];
 const baseAttribute = 8;
@@ -91,6 +91,34 @@ function applyStartingAttributes(unit) {
   unit.maxMagic = effectiveAttribute(unit,"intelligence") * 5;
   unit.magic = unit.profession === "法师" ? {current:unit.maxMagic,max:unit.maxMagic} : null;
   unit.discount = (charisma - baseAttribute) * 2;
+}
+
+function updateStamina(unit) {
+  const {maximum,remaining} = unit.load ?? {};
+  const freeLoadRatio = maximum > 0 ? Math.max(0,Math.min(1,remaining/maximum)) : 0;
+  const max = Math.max(0,Math.round(unit.attributes.constitution*10*freeLoadRatio));
+  const spent = unit.stamina ? unit.stamina.max-unit.stamina.current : 0;
+  unit.stamina = {current:Math.max(0,max-spent),max};
+}
+
+export function replaceBattleEquipment(unit, gear) {
+  unit.weapon = {headBonus:0,armorBonus:0,shieldBonus:0,...(gear.weapon ?? catalog.weapons.徒手)};
+  unit.armor = {head:figure(gear.head),body:figure(gear.body)};
+  unit.shield = gear.shield ? figure(gear.shield) : null;
+  unit.load = gear.load;
+  unit.items = gear.items ?? [];
+  unit.handItems = gear.handItems;
+  unit.lockedHands = gear.lockedHands;
+  unit.additionalGear = gear.additionalGear;
+  unit.profileResistances = gear.profileResistances;
+  if (gear.updateAttributes) {
+    unit.attributes = gear.attributes;
+    unit.attributeSources = gear.attributeSources;
+  }
+  updateHandStats(unit);
+  unit.maxMagic = effectiveAttribute(unit,"intelligence") * 5;
+  if (unit.magic) unit.magic = {current:Math.min(unit.magic.current,unit.maxMagic),max:unit.maxMagic};
+  updateStamina(unit);
 }
 
 function alignSetupRow(state, side, row) {
@@ -162,7 +190,7 @@ function recordMorale(state,event) {
     const change = (delta > 0 ? "+" : "") + delta;
     const result = morale === whiteFlag ? "举起白旗" : previous === whiteFlag ? "恢复战斗意志" :
       "现为" + (morale > 0 ? "+" : "") + morale;
-    note(state,unit.name + reason + "，士气 " + change + "，" + result + "。","morale");
+    note(state,unit.name + reason + "，士气 " + change + "，" + result + "。","morale","",{actorId:unit.id});
   });
 }
 
@@ -175,7 +203,7 @@ export function say(state,unit,event,now=Date.now()) {
   const queue = state.speeches.filter(line=>line.expiresAt>now);
   const startsAt = Math.max(now,queue.at(-1)?.expiresAt ?? now);
   entry.spokenAt = startsAt;
-  note(state,text,"speech",unit.name,{startsAt});
+  note(state,text,"speech",unit.name,{startsAt,actorId:unit.id});
   const speech = {id:state.serial,unitId:unit.id,name:unit.name,side:unit.side,text,startsAt,expiresAt:startsAt+bubbleDuration};
   state.speeches = [...queue,speech];
   state.rev++;
@@ -243,10 +271,54 @@ function assignTerrain(state, terrainId) {
   }
 }
 
-export function createBattle(terrain = "woods", weatherId = "clear", supplies = [], player, rosterProfiles, allies = [], partyMemberIds = [], enemies) {
+export function createBattleUnit(character, position = 0) {
+  const weapon = typeof character.weapon === "string" ? catalog.weapons[character.weapon] : character.weapon;
+  const mount = catalog.mounts[character.mount];
+  const unit = {
+    id:character.id, name:character.name, role:character.role, side:character.side,
+    ...(character.noncombatant ? {noncombatant:true} : {}),
+    level:character.level ?? 1, raceName:character.raceName, size:character.size ?? "中型", profession:character.profession ?? character.role,
+    gender:character.gender, genderLabel:character.genderLabel, bodyLabel:character.bodyLabel,
+    factionLabel:character.factionLabel, experience:character.experience,
+    originName:character.originName, traits:character.traits ?? [], attributeSources:character.attributeSources,
+    levelPoints:character.levelPoints, additionalGear:character.additionalGear ?? [],
+    items:character.items ?? [], handItems:{...character.handItems}, lockedHands:character.lockedHands ?? [],
+    skills:[...(character.skills ?? [])],
+    bio:character.bio ?? backgrounds[character.id], portrait:character.portrait, profilePortrait:character.profilePortrait,
+    portraitSprite:character.portraitSprite,
+    portraitCropKey:character.portraitCropKey, portraitFraming:character.portraitFraming, portraitVersion:character.portraitVersion,
+    profileResistances:character.profileResistances,
+    preferred:character.row, position, row:character.row, acted:false, moved:false, statuses:{}, morale:0,
+    attributes:Object.fromEntries(attributeNames.map(name=>[name,character.attributes?.[name] ?? baseAttribute])),
+    dialogue:createDialogue(character.presetId ?? character.id),
+    voiceProfile:character.gender === "female" || (character.presetId ?? character.id) === "vera" ? "female" : undefined,
+    weapon:{headBonus:0,armorBonus:0,shieldBonus:0,...(weapon ?? catalog.weapons.徒手)},
+    armor:{head:figure(character.head),body:figure(character.body)},
+    shield:character.shield ? figure(character.shield) : null,
+    mount:mount ? {
+      name:mount.name, size:mount.size ?? defaultMounts[character.mount]?.size ?? "中型",
+      current:mount.maxHp, max:mount.maxHp, ...(mount.draft ? {draft:mount.draft} : {}),
+    } : null,
+  };
+  applyStartingAttributes(unit);
+  const equipment = [unit.weapon.name,unit.armor.head.name,unit.armor.body.name,unit.shield?.name,
+    ...unit.additionalGear.map(item=>item.name)];
+  unit.load = character.load ?? battleLoad(unit.attributes.strength,
+    equipment.reduce((sum,name)=>sum+(catalog.gearWeights[name] ?? 0),0),
+    unit.items.reduce((sum,item)=>sum+(item.weight ?? 0)*item.qty,0));
+  updateStamina(unit);
+  if (character.maxHp !== undefined) {
+    unit.maxHp = character.maxHp;
+    unit.hp = Math.max(0,Math.min(unit.maxHp,character.hp));
+  }
+  if (unit.magic && character.mana !== undefined) unit.magic.current = Math.min(unit.magic.max,character.mana);
+  return unit;
+}
+
+export function createBattle(terrain = "woods", weatherId = "clear", supplies = [], player, rosterProfiles, allies = [], partyMemberIds = [], enemies, encounter) {
   const weather = catalog.weather.find(item => item.id === weatherId);
   if (!weather) throw new Error("天气不存在");
-  const participants = roster.filter(character => character.side === "enemy" ? !enemies : !partyMemberIds.includes(character.id)).map(character => {
+  const participants = (encounter ? [] : roster.filter(character => character.side === "enemy" ? !enemies : !partyMemberIds.includes(character.id))).map(character => {
     const profile = rosterProfiles?.[character.id] ?? defaultRosterProfiles[character.id];
     return {...profile,...character,profession:profile.role};
   });
@@ -259,49 +331,12 @@ export function createBattle(terrain = "woods", weatherId = "clear", supplies = 
   const state = {
     phase:"setup", round:1, winner:null, endReason:null, serial:0, rev:0, busy:false, log:[], speeches:[], lastStrike:null, pendingEnemyAttack:null, lanes, weather,
     fallen:[], settlement:null, report:null, supplies, usedItems:{}, itemSwaps:{}, restoredMana:{}, enemyFormationEnabled:Boolean(enemies?.length),
+    experience:{},
     damageStats:Object.fromEntries(participants.filter(unit=>unit.side==="player").map(unit=>[unit.id,{name:unit.name,armor:0,hp:0,taken:0}])),
-    units:participants.map((character, position) => {
-      const weapon = typeof character.weapon === "string" ? catalog.weapons[character.weapon] : character.weapon;
-      const mount = catalog.mounts[character.mount];
-      const unit = {
-        id:character.id, name:character.name, role:character.role, side:character.side,
-        level:character.level ?? 1, raceName:character.raceName, size:character.size ?? "中型", profession:character.profession ?? character.role,
-        originName:character.originName, traits:character.traits ?? [], attributeSources:character.attributeSources,
-        levelPoints:character.levelPoints, additionalGear:character.additionalGear ?? [],
-        items:character.items ?? [], handItems:{...character.handItems}, lockedHands:character.lockedHands ?? [],
-        skills:[...(character.skills ?? [])],
-        bio:character.bio ?? backgrounds[character.id], portrait:character.portrait, profilePortrait:character.profilePortrait,
-        portraitSprite:character.portraitSprite,
-        portraitCropKey:character.portraitCropKey,
-        profileResistances:character.profileResistances,
-        preferred:character.row, position, row:character.row, acted:false, moved:false, statuses:{}, morale:0,
-        attributes:Object.fromEntries(attributeNames.map(name=>[name,character.attributes?.[name] ?? baseAttribute])),
-        dialogue:createDialogue(character.presetId ?? character.id),
-        voiceProfile:character.gender === "female" || (character.presetId ?? character.id) === "vera" ? "female" : undefined,
-        weapon:{headBonus:0,armorBonus:0,shieldBonus:0,...(weapon ?? catalog.weapons.徒手)},
-        armor:{head:figure(character.head),body:figure(character.body)},
-        shield:character.shield ? figure(character.shield) : null,
-        mount:mount ? {
-          name:mount.name, size:mount.size ?? defaultMounts[character.mount]?.size ?? "中型",
-          current:mount.maxHp, max:mount.maxHp, ...(mount.draft ? {draft:mount.draft} : {}),
-        } : null,
-      };
-      applyStartingAttributes(unit);
-      const equipment = [unit.weapon.name,unit.armor.head.name,unit.armor.body.name,unit.shield?.name,
-        ...unit.additionalGear.map(item=>item.name)];
-      unit.load = character.load ?? battleLoad(unit.attributes.strength,
-        equipment.reduce((sum,name)=>sum+(catalog.gearWeights[name] ?? 0),0),
-        unit.items.reduce((sum,item)=>sum+(item.weight ?? 0)*item.qty,0));
-      if (character.maxHp !== undefined) {
-        unit.maxHp = character.maxHp;
-        unit.hp = Math.max(0,Math.min(unit.maxHp,character.hp));
-      }
-      if (unit.magic && character.mana !== undefined) unit.magic.current = Math.min(unit.magic.max,character.mana);
-      return unit;
-    }),
+    units:participants.map(createBattleUnit),
+    ...(encounter ? {encounter} : {}),
   };
   assignTerrain(state, terrain);
-  assignLeaders(state.units);
   if (state.terrain.indoors) state.weather = drawWeather(state.terrain);
   return state;
 }
@@ -378,9 +413,22 @@ export function reinforcementOptions(state,side) {
   return {units,columns};
 }
 
+function enterBattleExperience(state,unit) {
+  if (unit.side === "player") state.experience[unit.id] ??= {acted:0,received:0,defeated:0};
+}
+
+function trackEffectiveStrike(state,actor,target) {
+  if (actor.side === target.side) return;
+  const source = state.experience[actor.id];
+  const recipient = state.experience[target.id];
+  if (source) source.acted++;
+  if (recipient) recipient.received++;
+}
+
 function enterFromReserve(state,unit,row,column) {
+  enterBattleExperience(state,unit);
   Object.assign(unit,{row,fieldSide:unit.side,column,acted:true});
-  note(state,unit.name + "从预备队进入" + (row === "front" ? "前排" : "后排") + "。");
+  note(state,unit.name + "从预备队进入" + (row === "front" ? "前排" : "后排") + "。","info","",{actorId:unit.id});
   recordMorale(state,{reinforced:unit});
 }
 
@@ -395,13 +443,13 @@ function reinforceEnemy(state) {
 }
 
 function settlementEntry(unit,kind) {
-  const {id,name,side,role,profession,portrait,weapon,armor,shield,mount,magic,morale,leader,hp,maxHp,acted} = unit;
+  const {id,name,side,role,profession,portrait,weapon,armor,shield,mount,magic,stamina,morale,level,hp,maxHp,acted} = unit;
   const items = [{name:weapon.name,kind:"武器"}];
   for (const [type,gear] of [["头盔",armor.head],["护甲",armor.body],["盾牌",shield]]) {
     if (gear?.current > 0) items.push({name:gear.name,kind:type,current:gear.current,max:gear.max});
   }
   return {
-    kind,card:structuredClone({id,name,side,role,profession,portrait,armor,shield,mount,magic,morale,leader,hp,maxHp,acted}),
+    kind,card:structuredClone({id,name,side,role,profession,portrait,armor,shield,mount,magic,stamina,morale,level,hp,maxHp,acted}),
     items,looted:false,disposition:null,
   };
 }
@@ -522,12 +570,10 @@ function resolveDefeat(state) {
 }
 
 function advance(state) {
-  const starting = state.phase === "setup";
   if (state.phase === "reinforcement") {
     if (!startNextRound(state)) return;
   }
   if (resolveDefeat(state)) return;
-  if (starting) note(state,state.terrain.name + "开战。");
   for (;;) {
     let next = orderedActors(state)[0];
     if (!next) {
@@ -547,11 +593,10 @@ function advance(state) {
     }
     if (next.morale !== whiteFlag) {
       state.phase = next.side;
-      if (starting) note(state,next.name + "先行动。");
       return;
     }
     next.acted = true;
-    note(state,next.name + "举着白旗愣在原地，跳过行动。","morale");
+    note(state,next.name + "举着白旗愣在原地，跳过行动。","morale","",{actorId:next.id});
   }
 }
 
@@ -636,6 +681,47 @@ export function accuracyFor(actor, target, weather, state, skill) {
     weatherHit, weatherName:weather?.name ?? null, ...defense, block, skillHit, chance, blockLimit, dodgeLimit};
 }
 
+export function battleProfileCombat(unit, weather) {
+  const a = accuracyFor(unit,unit,weather);
+  const profileHit = a.base + a.adjustment + a.moraleHit + a.weatherHit;
+  const block = Math.max(a.meleeBlock,a.rangedBlock);
+  const activeBlock = a.guarding ? a.baseBlock + a.shieldBonus : 0;
+  const rawDodge = Math.max(0,(a.rawTargetDexterity-baseAttribute)*2);
+  const strength = unit.weapon.magic ? 0 : strengthDamagePercent(unit);
+  const signed = (value,unit) => (value > 0 ? "+" : "") + value + unit;
+  const contributions = (entries,suffix="%") => entries.filter(([,value,required])=>value || required)
+    .sort((a,b)=>b[1]-a[1]).map(([label,value])=>[label,signed(value,suffix)]);
+  return {
+    dodge:a.dodge, meleeBlock:a.meleeBlock, rangedBlock:a.rangedBlock, profileHit,
+    profileStatSources:{
+      block:{title:"格挡来源",rows:contributions([
+        ["基础格挡",a.baseBlock,true],["盾牌 · " + (unit.shield?.name ?? "无"),a.shieldBonus],
+        ["主动防御",activeBlock],["武器与盾牌格挡限制",block-a.baseBlock-a.shieldBonus-activeBlock],
+      ]), total:"合计格挡率 " + block + "%",
+      note:"对近战 " + a.meleeBlock + "% · 对远程 " + a.rangedBlock + "%" +
+        (unit.weapon.range === "远程" ? "；持远程武器不能格挡近战" : "") +
+        (!intactShield(unit) ? "；无完好盾牌不能格挡远程" : "")},
+      dodge:{title:"闪避来源",rows:contributions([
+        ["敏捷（" + a.rawTargetDexterity + "）",rawDodge,true],
+        ["装备敏捷上限（有效敏捷 " + a.targetDexterity + "）",a.attributeDodge-rawDodge],
+        ["士气",a.moraleDodge],["总闪避最低 0%",a.baseDodge-a.attributeDodge-a.moraleDodge],
+        ["主动闪避",a.activeDodge],
+      ]),total:"合计闪避率 " + a.dodge + "%"},
+      damage:{title:"伤害来源",rows:[
+        ["武器 · " + unit.weapon.name,String(unit.weapon.damage)],
+        ...(unit.weapon.magic ? [] : [["力量 " + unit.attributes.strength + "（" + signed(strength,"%") + "）",
+          signed(unit.damage-unit.weapon.damage,"")]]),
+      ],total:"实际攻击伤害 " + unit.damage,
+      note:"命中后按目标和命中部位结算，护甲、格挡等会影响最终扣血。"},
+      hit:{title:"命中来源",rows:contributions([
+        ["基础命中",a.base,true],[a.attribute + "（" + a.score + "）",a.adjustment,true],
+        ["士气",a.moraleHit],["天气" + (a.weatherName ? " · " + a.weatherName : ""),a.weatherHit],
+      ]),total:"合计命中 " + profileHit + "%",
+      note:"对具体目标的命中率还受其闪避、格挡及战场情况影响。"},
+    },
+  };
+}
+
 function rollPercent(roll) {
   return Math.floor(roll() * 100) + 1;
 }
@@ -680,7 +766,11 @@ function useRestoration(state,request,roll) {
   const wasHeavilyWounded = health && isHeavilyWounded(target);
   const amount = health ? Math.min(target.maxHp-target.hp,recovered)
     : Math.min(target.magic.max-target.magic.current,recovered);
-  if (health) target.hp += amount;
+  if (health) {
+    target.hp += amount;
+    const contribution = state.experience[actor.id];
+    if (amount > 0 && contribution) contribution.acted++;
+  }
   else {
     target.magic = {...target.magic,current:target.magic.current+amount};
     state.restoredMana[target.id] = target.magic.current;
@@ -691,10 +781,11 @@ function useRestoration(state,request,roll) {
     .filter(entry=>entry.qty>0);
   const itemWeight = actor.items.reduce((sum,entry)=>sum+(entry.weight ?? 0)*entry.qty,0);
   actor.load = battleLoad(actor.load.maximum/carryKgPerStrength,actor.load.equipped,itemWeight);
+  updateStamina(actor);
   actor.acted = true;
   const recipient = actor === target ? "自己" : target.name;
   note(state,actor.name + "给" + recipient + "使用了「" + item.name + "」，恢复 " + amount +
-    " 点" + (health ? "生命" : "魔力") + "。","item");
+    " 点" + (health ? "生命" : "魔力") + "。","item","",{actorId:actor.id,targetId:actor === target ? undefined : target.id});
   recoverMorale(state,target,wasHeavilyWounded);
 }
 
@@ -730,9 +821,10 @@ function swapCarriedGear(state, request) {
   const oldWeight = previous?.weight ?? 0;
   const weightDelta = item.weight - oldWeight;
   actor.load = battleLoad(actor.load.maximum/carryKgPerStrength,actor.load.equipped+weightDelta,actor.load.items-weightDelta);
+  updateStamina(actor);
   updateHandStats(actor);
   actor.acted = true;
-  note(state,actor.name + "换上了「" + item.name + "」。","item");
+  note(state,actor.name + "换上了「" + item.name + "」。","item","",{actorId:actor.id});
 }
 
 function strikeMount(state,actor,target,detail,summary,flanked) {
@@ -747,7 +839,7 @@ function strikeMount(state,actor,target,detail,summary,flanked) {
   noteStrike(state,summary,detail);
   if (dismounted) {
     target.role = "步兵";
-    note(state,target.name + "的战马倒下，在原地改为步战。");
+    note(state,target.name + "的战马倒下，在原地改为步战。","info","",{actorId:target.id});
     say(state,target,"dismount");
   }
   if (dismounted || flanked) recordMorale(state,{changes:[
@@ -769,7 +861,7 @@ function attack(state, actor, target, roll, skill) {
     largeBonus, attack:Math.round(actor.damage*(100+largeBonus)/100),
   };
   const detail = {
-    hit,outcome,actor:actor.name,target:target.name,weapon:actor.weapon.name,accuracy,damageCheck,damage:null,
+    hit,outcome,actor:actor.name,target:target.name,actorId:actor.id,targetId:target.id,weapon:actor.weapon.name,accuracy,damageCheck,damage:null,
     mountDamage:null,...(skill ? {name:skill.name} : {}),
   };
   actor.acted = true;
@@ -783,6 +875,7 @@ function attack(state, actor, target, roll, skill) {
       const bonus = impact - damageCheck.attack;
       const blocked = Math.min(before,impact);
       shield.current -= blocked;
+      if (blocked > 0) trackEffectiveStrike(state,actor,target);
       detail.guard = {shield:shield.name,before,blocked,after:shield.current,bonus,impact,
         bonusRate:Math.round(actor.weapon.shieldBonus * 100),broken:shield.current === 0};
       Object.assign(state.lastStrike,{zone:"shield",guard:detail.guard});
@@ -811,6 +904,7 @@ function attack(state, actor, target, roll, skill) {
   const strikeDamage = damageCheck.attack;
   const result = resolveStrike(target,strikeDamage,zone,actor.weapon.penetration,actor.weapon.armorBonus);
   const {penetration,blocked,hpLoss} = result;
+  if (blocked > 0 || hpLoss > 0) trackEffectiveStrike(state,actor,target);
   const dealt = state.damageStats[actor.id];
   if (dealt) {
     dealt.armor += blocked;
@@ -826,10 +920,12 @@ function attack(state, actor, target, roll, skill) {
   noteStrike(state,summary,detail);
   say(state,actor,"hit");
   if (target.hp === 0) {
+    const contribution = state.experience[actor.id];
+    if (contribution && target.side !== actor.side) contribution.defeated++;
     state.fallen.push(settlementEntry(target,"corpse"));
     say(state,target,"fall");
     state.units = state.units.filter(unit=>unit!==target);
-    note(state,target.name + "阵亡离场。");
+    note(state,target.name + "阵亡离场。","info","",{actorId:target.id});
     recordMorale(state,{actor,fallen:[target]});
     for (const ally of sideUnits(state,target.side)) {
       if (active(ally)) say(state,ally,"allyFall");
@@ -862,7 +958,6 @@ export function action(state, request, roll = Math.random) {
     if (state.phase !== "setup") throw new Error("布阵已结束");
     if (type === "terrain" && request.terrain !== state.terrain.id) {
       assignTerrain(state, request.terrain);
-      assignLeaders(state.units);
       state.weather = drawWeather(state.terrain,roll);
     }
     if (type === "deploy") {
@@ -874,12 +969,13 @@ export function action(state, request, roll = Math.random) {
       unit.position = Math.max(...state.units.map((entry) => entry.position)) + 1;
       alignSetupRow(state,"player",prior);
       alignSetupRow(state,"player",unit.row);
-      assignLeaders(state.units);
     }
     if (type === "start") {
-      const roster = state.enemyFormationEnabled ? state.units.filter(unit=>unit.hp>0) : sideUnits(state,"player");
+      const fighters = state.encounter ? state.units.filter(unit=>!unit.noncombatant) : state.units;
+      if (state.encounter && !fighters.some(unit=>unit.side === "enemy" && unit.hp>0)) throw new Error("对方没有战斗人员");
+      const roster = state.enemyFormationEnabled ? fighters.filter(unit=>unit.hp>0) : sideUnits(state,"player");
       for (const unit of roster) {
-        if (battleItemCount(unit.items)>battleItemSlots) throw new Error(unit.name+"的道具栏超过三件，请先调整随身道具。");
+        if (battleItemCount(unit.items)>battleItemSlots) throw new Error(`${unit.name}的道具栏超过 ${battleItemSlots} 件，请先调整随身道具。`);
         if (unit.load.remaining<0) throw new Error(unit.name+"已超出个人最大负重，请先调整装备或物品。");
       }
       const width = state.fieldColumns.length;
@@ -891,12 +987,17 @@ export function action(state, request, roll = Math.random) {
       if (formation !== undefined) applyFormation(state,formation);
       if (enemyFormation !== undefined) applyFormation(state,enemyFormation);
       if (!sideUnits(state,"player").some(active)) throw new Error("至少安排一名士兵上阵");
-      assignLeaders(state.units);
+      if (fighters.length !== state.units.length) {
+        state.units = fighters;
+        applyFormation(state,standardFormation(state,width,"enemy"));
+      }
+      for (const unit of state.units.filter(active)) enterBattleExperience(state,unit);
       startMorale(state);
       advance(state);
     }
     if (type === "encounterExit") {
       if (!["retreat","surrender"].includes(request.decision)) throw new Error("无效的遭遇选择");
+      if (request.decision === "retreat" && state.encounter?.hostile === false) state.peacefulExit = true;
       finishBattle(state,"player",request.decision === "retreat" ? "withdrawal" : "surrender");
     }
   } else if (type === "reinforce" || type === "finishReinforcement") {
@@ -915,7 +1016,7 @@ export function action(state, request, roll = Math.random) {
     const problem = retreatProblem(state,actor);
     if (problem) throw new Error(problem);
     Object.assign(actor,{row:"reserve",fieldSide:actor.side,column:null,acted:true,statuses:{}});
-    note(state,actor.name + "撤回预备队。");
+    note(state,actor.name + "撤回预备队。","info","",{actorId:actor.id});
     advance(state);
   } else if (type === "move" || type === "enemyMove") {
     const actor = assertActor(state,request.actor,type === "move" ? "player" : "enemy");
@@ -926,7 +1027,7 @@ export function action(state, request, roll = Math.random) {
     }
     Object.assign(actor,{fieldSide,row,column,moved:true});
     const line = (fieldSide === "player" ? "我方" : "敌方") + (row === "front" ? "前排" : "后排");
-    note(state,actor.name+"移动到"+line+"。");
+    note(state,actor.name+"移动到"+line+"。","info","",{actorId:actor.id});
     recordMorale(state,{reinforced:actor});
   } else if (type === "item") {
     useRestoration(state,request,roll);
@@ -945,7 +1046,7 @@ export function action(state, request, roll = Math.random) {
       const wasHeavilyWounded = isHeavilyWounded(actor);
       actor.hp += healing;
       actor.acted = true;
-      note(state,actor.name + "使用了技能「" + skill.name + "」，回复 " + healing + " 点血量。","skill");
+      note(state,actor.name + "使用了技能「" + skill.name + "」，回复 " + healing + " 点血量。","skill","",{actorId:actor.id});
       recoverMorale(state,actor,wasHeavilyWounded);
     } else {
       const {target} = assertAttack(state,request.actor,request.target,side);
@@ -962,15 +1063,13 @@ export function action(state, request, roll = Math.random) {
     const actor = assertActor(state,request.actor,type === "dodge" ? "player" : "enemy");
     actor.acted = true;
     actor.statuses.dodge = 1;
-    note(state,actor.name + "进入闪避，当前闪避 " + defenseFor(actor).dodge + "%。");
+    note(state,actor.name + "开始“闪避”。","dodge","",{actorId:actor.id,actor:actor.name});
     advance(state);
   } else if (type === "defend" || type === "enemyDefend") {
     const actor = assertActor(state,request.actor,type === "defend" ? "player" : "enemy");
     actor.acted = true;
     actor.statuses.defend = 1;
-    const posture = intactShield(actor) ? "举盾防御" : "进入防御";
-    const {meleeBlock,rangedBlock} = defenseFor(actor);
-    note(state,actor.name + posture + "，对近战格挡 " + meleeBlock + "%，对远程格挡 " + rangedBlock + "%。","guard");
+    note(state,actor.name + "开始“防御”。","guard","",{actorId:actor.id,actor:actor.name});
     say(state,actor,"guard");
     advance(state);
   } else {

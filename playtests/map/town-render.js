@@ -353,7 +353,7 @@
         stall(ctx,site.type === 'town-dock-market' ? '#736e86' : '#8f8451');
       }
     } else if (form === 'gate' || form === 'keep-gate') {
-      if (form === 'keep-gate') ctx.rotate(Math.PI/2);
+      if (form === 'keep-gate' || site.id === 'north-gate') ctx.rotate(Math.PI/2);
       gate(ctx,roof);
     }
     else if (form === 'rampart') rampart(ctx,roof);

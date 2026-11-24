@@ -1,9 +1,27 @@
 const faceRatio = 2/3;
 const minimumScale = .18;
 const clamp = (value,min,max) => Math.max(min,Math.min(max,value));
+const automaticFace = {x:.5,y:.18,scale:.36};
+const kneesFace = {x:.5,y:.125,scale:.23};
 
 export function moveCrop(crop, dx, dy) {
   return {...crop,x:clamp(crop.x+dx,0,1-crop.width),y:clamp(crop.y+dy,0,1-crop.height)};
+}
+
+export function resizeCropEdge(crop, edge, dx, dy) {
+  const horizontal = edge === "left" || edge === "right";
+  const delta = horizontal ? dx / crop.width : dy / crop.height;
+  const fixed = edge === "left" ? crop.x + crop.width : edge === "right" ? crop.x :
+    edge === "top" ? crop.y + crop.height : crop.y;
+  const center = horizontal ? crop.y + crop.height / 2 : crop.x + crop.width / 2;
+  const maxAlong = (edge === "left" || edge === "top" ? fixed : 1 - fixed) / (horizontal ? crop.width : crop.height);
+  const maxAcross = 2 * Math.min(center,1-center) / (horizontal ? crop.height : crop.width);
+  const factor = clamp(1 + (edge === "left" || edge === "top" ? -delta : delta),
+    minimumScale / crop.scale,Math.min(maxAlong,maxAcross,1 / crop.scale));
+  const width = crop.width * factor, height = crop.height * factor;
+  return {width,height,scale:crop.scale * factor,
+    x:horizontal ? fixed - (edge === "left" ? width : 0) : center - width / 2,
+    y:horizontal ? center - height / 2 : fixed - (edge === "top" ? height : 0)};
 }
 
 export function cropRectangle(width, height, {x,y,scale}) {
@@ -23,14 +41,31 @@ export function portraitBackground({columns,rows,column,row}, crop) {
   };
 }
 
-export function portraitSource(unit, fallback) {
-  if (unit.profilePortrait) return {url:unit.profilePortrait,columns:1,rows:1,column:0,row:0};
+export function portraitSource(unit, fallback, artPath = "./art/") {
+  const fullImage = url => ({url,columns:1,rows:1,column:0,row:0,
+    defaultCrop:cropRectangle(2,3,unit.portraitFraming === "knees" ? kneesFace : automaticFace)});
+  if (unit.profilePortrait) return {...fullImage(unit.profilePortrait),revision:unit.portraitVersion};
   if (unit.portraitSprite) {
     const {atlas,column,row,face} = unit.portraitSprite;
-    const defaultCrop = face && cropRectangle(2,3,{x:face[0],y:face[1],scale:face[2]});
-    return {url:"./art/test-portraits-"+atlas+".png",columns:3,rows:2,column,row,defaultCrop};
+    const defaultCrop = cropRectangle(2,3,face ? {x:face[0],y:face[1],scale:face[2]} : automaticFace);
+    return {url:artPath+"test-portraits-"+atlas+".png",columns:3,rows:2,column,row,defaultCrop};
   }
-  return fallback ? {url:fallback,columns:1,rows:1,column:0,row:0} : undefined;
+  return fallback ? fullImage(fallback) : undefined;
+}
+
+export function headshotCrop(source, saved) {
+  return saved ?? source?.defaultCrop;
+}
+
+export const portraitCropStorageKey = key => "campfire.battle-face." + key;
+export const portraitSelectionKey = (key, source) => source?.revision == null ? key : key + "@" + source.revision;
+
+export function readPortraitCrop(key) {
+  let value;
+  try { value = JSON.parse(localStorage.getItem(portraitCropStorageKey(key))); } catch {}
+  const valid = value && ["x","y","width","height","scale"].every(field =>
+    Number.isFinite(value[field]) && value[field] >= 0 && value[field] <= 1);
+  return valid && value.width > 0 && value.height > 0 ? value : undefined;
 }
 
 export function createPortraitViewer(dialog, render) {
@@ -42,23 +77,13 @@ export function createPortraitViewer(dialog, render) {
   const preview = get("portrait-selected");
   const actions = get("portrait-actions");
   const edit = get("portrait-edit");
-  const size = get("portrait-size");
   const save = get("portrait-save");
   const status = get("portrait-status");
-  const crops = new Map();
-  const keyOf = unit => "campfire.battle-face."+(unit.portraitCropKey ?? "roster:"+unit.id);
+  const keyOf = unit => unit.portraitCropKey ?? "roster:"+unit.id;
   let active, crop, drag;
 
-  function savedCrop(unit) {
-    const key = keyOf(unit);
-    if (!crops.has(key)) {
-      let value;
-      try { value = JSON.parse(localStorage.getItem(key)); } catch {}
-      const valid = value && ["x","y","width","height","scale"].every(field =>
-        Number.isFinite(value[field]) && value[field] >= 0 && value[field] <= 1);
-      crops.set(key,valid && value.width > 0 && value.height > 0 ? value : undefined);
-    }
-    return crops.get(key);
+  function savedCrop(unit,source) {
+    return readPortraitCrop(portraitSelectionKey(keyOf(unit),source));
   }
 
   function paintCrop() {
@@ -72,18 +97,17 @@ export function createPortraitViewer(dialog, render) {
     if (!active || canvas.hidden) return;
     active.editing = true;
     dialog.setAttribute("aria-label",active.unit.name + "的面部取景");
-    const selection = savedCrop(active.unit) ?? active.source.defaultCrop;
+    const selection = headshotCrop(active.source,savedCrop(active.unit,active.source));
     crop = cropRectangle(canvas.width,canvas.height,selection
       ? {x:selection.x+selection.width/2,y:selection.y+selection.height/2,scale:selection.scale}
-      : {x:.5,y:.19,scale:.32});
-    size.value = String(Math.round(crop.scale*100));
+      : automaticFace);
     paintCrop();
     actions.hidden = true;
     frame.hidden = controls.hidden = result.hidden = false;
     frame.focus({preventScroll:true});
   }
 
-  async function open(unit,source) {
+  async function open(unit,source,editImmediately=false) {
     if (!source || dialog.open) return;
     const request = {unit,source,editing:false};
     active = request;
@@ -108,28 +132,25 @@ export function createPortraitViewer(dialog, render) {
       canvas.hidden = false;
       status.hidden = true;
       edit.disabled = false;
+      if (editImmediately) startEdit();
     } catch {
       if (active === request) status.textContent = "无法载入立绘。";
     }
   }
 
   edit.addEventListener("click",startEdit);
-  function resize(scale) {
-    crop = cropRectangle(canvas.width,canvas.height,{x:crop.x+crop.width/2,y:crop.y+crop.height/2,scale});
-    paintCrop();
-  }
-  size.addEventListener("input",()=>resize(Number(size.value)/100));
   frame.addEventListener("pointerdown",event=>{
     if (event.button !== 0) return;
     event.preventDefault();
     frame.focus({preventScroll:true});
     frame.setPointerCapture(event.pointerId);
-    drag = {id:event.pointerId,x:event.clientX,y:event.clientY,crop};
+    drag = {id:event.pointerId,x:event.clientX,y:event.clientY,crop,edge:event.target.closest("[data-edge]")?.dataset.edge};
   });
   frame.addEventListener("pointermove",event=>{
     if (event.pointerId !== drag?.id) return;
     const rect = canvas.getBoundingClientRect();
-    crop = moveCrop(drag.crop,(event.clientX-drag.x)/rect.width,(event.clientY-drag.y)/rect.height);
+    const dx = (event.clientX-drag.x)/rect.width, dy = (event.clientY-drag.y)/rect.height;
+    crop = drag.edge ? resizeCropEdge(drag.crop,drag.edge,dx,dy) : moveCrop(drag.crop,dx,dy);
     paintCrop();
   });
   frame.addEventListener("lostpointercapture",()=>{ drag = undefined; });
@@ -143,10 +164,10 @@ export function createPortraitViewer(dialog, render) {
   });
   save.addEventListener("click",()=>{
     if (!active?.editing || controls.hidden) return;
-    const key = keyOf(active.unit);
-    crops.set(key,crop);
+    const key = portraitCropStorageKey(portraitSelectionKey(keyOf(active.unit),active.source));
     try { localStorage.setItem(key,JSON.stringify(crop)); } catch {}
     dialog.close();
+    window.dispatchEvent(new StorageEvent("storage",{key}));
     render();
   });
   dialog.addEventListener("close",()=>{ active = crop = drag = undefined; });

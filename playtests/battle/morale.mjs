@@ -10,19 +10,6 @@ export const nearby = (a,b) => Math.abs(rankOf(a)-rankOf(b)) + Math.abs(a.column
 export const isHeavilyWounded = unit => unit.hp <= unit.maxHp*heavyWoundRatio;
 const ownFront = unit => unit.row === "front" && fieldSideOf(unit) === unit.side;
 
-export function strongestUnit(units) {
-  const attributeTotal = unit => Object.values(unit.attributes).reduce((sum,value)=>sum+value,0);
-  return units.toSorted((a,b)=>b.level-a.level || attributeTotal(b)-attributeTotal(a))[0];
-}
-
-export function assignLeaders(units) {
-  for (const side of sides) {
-    const team = units.filter(unit=>unit.side===side);
-    const leader = strongestUnit(team.filter(canFight));
-    for (const unit of team) unit.leader = unit === leader;
-  }
-}
-
 export function startMorale(state) {
   state.moraleTracking = Object.fromEntries(sides.map(side=>{
     const field = state.units.filter(unit=>unit.side===side && onField(unit));
@@ -92,8 +79,6 @@ export function settleMorale(state, event, report) {
       const theirs = opposite(side);
       const lost = fieldLosses.filter(({unit})=>unit.side===side);
       if (lost.length) {
-        const leaderLost = lost.some(({unit})=>unit.leader);
-        if (mark(team,"leaderLost",leaderLost)) swing(side,2,"首领倒下");
         const unavailable = team.initialIds.filter(id=>!state.units.some(unit=>unit.id===id && unit.hp>0 && unit.morale!==whiteFlag)).length;
         if (mark(team,"halfLost",unavailable>=2 && unavailable*2>=team.initialIds.length)) swing(side,2,"减员过半");
         if (mark(team,"frontBroken",team.frontEligible && frontCount(side)===0 && lost.some(({unit})=>ownFront(unit)))) {

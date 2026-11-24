@@ -1,4 +1,4 @@
-import { accuracyFor, action, assertAttack, attackOptions, catalog, chooseEnemy, createBattle, defenseFor, drawWeather, effectiveAttribute, movementOptions, openColumn, orderedActors, reinforcementOptions, retreatProblem, say } from "./battle.mjs";
+import { accuracyFor, action, assertAttack, attackOptions, catalog, chooseEnemy, createBattle, defenseFor, drawWeather, effectiveAttribute, movementOptions, openColumn, orderedActors, reinforcementOptions, replaceBattleEquipment, retreatProblem, say } from "./battle.mjs";
 
 export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math.random,weatherRoll=Math.random}={}) {
   const supplies = [];
@@ -16,7 +16,7 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
   const snapshot = () => {
     state ??= newBattle();
     const now = Date.now();
-    const {fallen,damageStats,supplies,moraleTracking,usedItems,itemSwaps,restoredMana,...publicState} = state;
+    const {fallen,damageStats,supplies,moraleTracking,usedItems,itemSwaps,restoredMana,experience,...publicState} = state;
     const {weather} = state;
     const attacks = state.units.map(unit=>[unit,attackOptions(state,unit.id)]);
     return {
@@ -124,10 +124,10 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
     return snapshot();
   }
 
-  function beginEncounter(player, weatherId, allies = [], ammo, partyMemberIds = allies.map(unit => unit.id), enemies) {
+  function beginEncounter(player, weatherId, allies = [], ammo, partyMemberIds = allies.map(unit => unit.id), enemies, encounter) {
     if (encounterMembers) return;
     const members = allies.map(unit => ({...unit,presetId:unit.id,id:"ally-" + encodeURIComponent(unit.id)}));
-    state = createBattle("clearing",weatherId,supplies,{...player,presetId:player.id,id:"pc"},rosterProfiles,members,partyMemberIds,enemies);
+    state = createBattle("clearing",weatherId,supplies,{...player,presetId:player.id,id:"pc"},rosterProfiles,members,partyMemberIds,enemies,encounter);
     if (Number.isSafeInteger(ammo) && ammo >= 0) Object.assign(state,{ ammoLeft:ammo, ammoSpent:0 });
     encounterMembers = [[player.id,"pc"],...allies.map((unit,i)=>[unit.id,members[i].id])];
     state.dialogueEnabled = dialogueEnabled;
@@ -137,6 +137,27 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
 
   function updateRoster(profiles) {
     rosterProfiles = profiles;
+  }
+
+  function equipment(id) {
+    const unit = state?.units.find(unit=>unit.id === id);
+    if (!unit) return null;
+    return {
+      unit, revision:state.rev, busy:state.busy,
+      locked:unit.side !== "player" || state.phase !== "setup",
+      usedItems:state.usedItems[id] ?? [], itemSwaps:state.itemSwaps[id] ?? [],
+    };
+  }
+
+  function changeEquipment(id, revision, gear) {
+    const current = equipment(id);
+    if (!current || current.locked) throw new Error("这名角色的装备已锁定。");
+    if (revision !== current.revision || current.busy) throw new Error("战斗状态已更新，请稍后再试。");
+    replaceBattleEquipment(current.unit,gear);
+    delete state.usedItems[id];
+    delete state.itemSwaps[id];
+    state.rev++;
+    return snapshot();
   }
 
   function result() {
@@ -156,10 +177,13 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
       .map(([member,unit])=>[member,state.itemSwaps[unit]]));
     const mana = Object.fromEntries(encounterMembers.filter(([,unit])=>state.restoredMana[unit] !== undefined)
       .map(([member,unit])=>[member,state.restoredMana[unit]]));
-    return {outcome,hp,...(Object.keys(durability).length ? {durability} : {}),
+    const experience = outcome === "retreat" ? {} : Object.fromEntries(encounterMembers.filter(([,unit])=>state.experience[unit])
+      .map(([member,unit])=>[member,{...state.experience[unit]}]));
+    return {outcome,hp,...(state.peacefulExit ? {peacefulExit:true} : {}),...(Object.keys(experience).length ? {experience} : {}),
+      ...(Object.keys(durability).length ? {durability} : {}),
       ...(Object.keys(usedItems).length ? {usedItems} : {}),...(Object.keys(itemSwaps).length ? {itemSwaps} : {}),
       ...(Object.keys(mana).length ? {mana} : {})};
   }
 
-  return { snapshot, submit, beginEncounter, updateRoster, setDialogue, result };
+  return { snapshot, submit, beginEncounter, updateRoster, setDialogue, result, equipment, changeEquipment };
 }

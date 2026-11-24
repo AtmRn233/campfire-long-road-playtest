@@ -1,0 +1,8 @@
+#portrait-crop [data-edge]{position:absolute;display:grid;place-items:center;touch-action:none}
+#portrait-crop [data-edge]::after{content:"";width:8px;height:8px;border:1px solid #61431a;border-radius:2px;background:#f5d590}
+#portrait-crop [data-edge="left"],#portrait-crop [data-edge="right"]{inset-block:0;width:14px;cursor:ew-resize}
+#portrait-crop [data-edge="top"],#portrait-crop [data-edge="bottom"]{inset-inline:0;height:14px;cursor:ns-resize}
+#portrait-crop [data-edge="left"]{left:-7px}
+#portrait-crop [data-edge="right"]{right:-7px}
+#portrait-crop [data-edge="top"]{top:-7px}
+#portrait-crop [data-edge="bottom"]{bottom:-7px}

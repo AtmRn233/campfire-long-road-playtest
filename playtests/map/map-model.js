@@ -123,11 +123,13 @@
 
   function roadMask(map, x, y) {
     const hasRoad = (col, row) => contains(col, row, map) && map.roads[cellIndex(col, row)];
+    const bridge = map.sites.find(site => site.unpavedEnd && site.x === x && site.y === y);
     return (
       (hasRoad(x, y - 1) ? DIRECTIONS.north : 0) |
       (hasRoad(x + 1, y) ? DIRECTIONS.east : 0) |
       (hasRoad(x, y + 1) ? DIRECTIONS.south : 0) |
-      (hasRoad(x - 1, y) ? DIRECTIONS.west : 0)
+      (hasRoad(x - 1, y) ? DIRECTIONS.west : 0) |
+      (bridge ? DIRECTIONS[bridge.unpavedEnd] : 0)
     );
   }
 
@@ -175,6 +177,12 @@
           throw new Error('常住种族数据无效。');
         }
         map.sites.at(-1).residents = [...new Set(site.residents)];
+      }
+      if (site.unpavedEnd !== undefined) {
+        if (!['stone-bridge', 'mill-bridge'].includes(site.type) || !Object.hasOwn(DIRECTIONS, site.unpavedEnd)) {
+          throw new Error('桥梁接岸方向无效。');
+        }
+        map.sites.at(-1).unpavedEnd = site.unpavedEnd;
       }
     }
     if (input.regions !== undefined) {

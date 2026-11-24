@@ -1,0 +1,338 @@
+{
+  "male-hurt": [
+    {
+      "code": "S1176",
+      "url": "./audio/voices/S1176.wav",
+      "offset": 0,
+      "duration": 0.554,
+      "license": "CC0-1.0",
+      "profile": "M01"
+    },
+    {
+      "code": "S1177",
+      "url": "./audio/voices/S1177.wav",
+      "offset": 0,
+      "duration": 0.969,
+      "license": "CC0-1.0",
+      "profile": "M01"
+    },
+    {
+      "code": "S1203",
+      "url": "./audio/voices/S1203.wav",
+      "offset": 0,
+      "duration": 0.547,
+      "license": "CC-BY-3.0",
+      "profile": "M02"
+    },
+    {
+      "code": "S1204",
+      "url": "./audio/voices/S1204.wav",
+      "offset": 0,
+      "duration": 0.637,
+      "license": "CC-BY-3.0",
+      "profile": "M02"
+    },
+    {
+      "code": "S1217",
+      "url": "./audio/voices/S1217.wav",
+      "offset": 0.00294,
+      "duration": 0.813,
+      "license": "CC-BY-SA-3.0",
+      "profile": "M03"
+    },
+    {
+      "code": "S1218",
+      "url": "./audio/voices/S1218.wav",
+      "offset": 0.00292,
+      "duration": 0.715,
+      "license": "CC-BY-SA-3.0",
+      "profile": "M03"
+    },
+    {
+      "code": "S1211",
+      "url": "./audio/voices/S1211.wav",
+      "offset": 0.50934,
+      "duration": 1.0,
+      "license": "CC0-1.0",
+      "profile": "M06"
+    },
+    {
+      "code": "S1212",
+      "url": "./audio/voices/S1212.wav",
+      "offset": 0.28113,
+      "duration": 1.0,
+      "license": "CC0-1.0",
+      "profile": "M06"
+    },
+    {
+      "code": "S1224",
+      "url": "./audio/voices/S1224.wav",
+      "offset": 0.02707,
+      "duration": 0.453,
+      "license": "CC0-1.0",
+      "profile": "M08"
+    },
+    {
+      "code": "S1225",
+      "url": "./audio/voices/S1225.wav",
+      "offset": 0.03997,
+      "duration": 0.363,
+      "license": "CC0-1.0",
+      "profile": "M08"
+    },
+    {
+      "code": "S1239",
+      "url": "./audio/voices/S1239.wav",
+      "offset": 0.01752,
+      "duration": 0.38,
+      "license": "CC0-1.0",
+      "profile": "M09"
+    },
+    {
+      "code": "S1240",
+      "url": "./audio/voices/S1240.wav",
+      "offset": 0.00197,
+      "duration": 0.63,
+      "license": "CC0-1.0",
+      "profile": "M09"
+    }
+  ],
+  "male-death": [
+    {
+      "code": "S1244",
+      "url": "./audio/voices/S1244.wav",
+      "offset": 0,
+      "duration": 2.878,
+      "license": "CC0-1.0",
+      "profile": "M01"
+    },
+    {
+      "code": "S1246",
+      "url": "./audio/voices/S1246.wav",
+      "offset": 0,
+      "duration": 0.735,
+      "license": "CC-BY-3.0",
+      "profile": "M02"
+    },
+    {
+      "code": "S1249",
+      "url": "./audio/voices/S1249.wav",
+      "offset": 0.01832,
+      "duration": 2.0,
+      "license": "CC-BY-SA-3.0",
+      "profile": "M03"
+    },
+    {
+      "code": "S1375",
+      "url": "./audio/voices/S1375.wav",
+      "offset": 0.279,
+      "duration": 1.0,
+      "license": "CC0-1.0",
+      "profile": "M04"
+    },
+    {
+      "code": "S1391",
+      "url": "./audio/voices/S1391.wav",
+      "offset": 0.40458,
+      "duration": 1.0,
+      "license": "CC0-1.0",
+      "profile": "M05"
+    },
+    {
+      "code": "S1402",
+      "url": "./audio/voices/S1402.wav",
+      "offset": 0.37884,
+      "duration": 2.5,
+      "license": "CC0-1.0",
+      "profile": "M06"
+    },
+    {
+      "code": "S1418",
+      "url": "./audio/voices/S1418.wav",
+      "offset": 1.47285,
+      "duration": 4.5,
+      "license": "CC0-1.0",
+      "profile": "M07"
+    }
+  ],
+  "female-hurt": [
+    {
+      "code": "S2484",
+      "url": "./audio/voices/S2484.wav",
+      "offset": 0,
+      "duration": 0.287,
+      "license": "CC0-1.0",
+      "profile": "F01"
+    },
+    {
+      "code": "S2485",
+      "url": "./audio/voices/S2485.wav",
+      "offset": 0,
+      "duration": 0.384,
+      "license": "CC0-1.0",
+      "profile": "F01"
+    },
+    {
+      "code": "S2486",
+      "url": "./audio/voices/S2486.wav",
+      "offset": 0,
+      "duration": 0.322,
+      "license": "CC0-1.0",
+      "profile": "F01"
+    },
+    {
+      "code": "S2487",
+      "url": "./audio/voices/S2487.wav",
+      "offset": 0.01614,
+      "duration": 0.511,
+      "license": "CC0-1.0",
+      "profile": "F02"
+    },
+    {
+      "code": "S2488",
+      "url": "./audio/voices/S2488.wav",
+      "offset": 0.00916,
+      "duration": 0.328,
+      "license": "CC0-1.0",
+      "profile": "F02"
+    },
+    {
+      "code": "S2489",
+      "url": "./audio/voices/S2489.wav",
+      "offset": 0.00136,
+      "duration": 0.379,
+      "license": "CC0-1.0",
+      "profile": "F02"
+    },
+    {
+      "code": "S2490",
+      "url": "./audio/voices/S2490.wav",
+      "offset": 0,
+      "duration": 0.465,
+      "license": "CC0-1.0",
+      "profile": "F03"
+    },
+    {
+      "code": "S2491",
+      "url": "./audio/voices/S2491.wav",
+      "offset": 0.00757,
+      "duration": 0.375,
+      "license": "CC0-1.0",
+      "profile": "F03"
+    },
+    {
+      "code": "S2492",
+      "url": "./audio/voices/S2492.wav",
+      "offset": 0,
+      "duration": 0.384,
+      "license": "CC0-1.0",
+      "profile": "F03"
+    },
+    {
+      "code": "S1194",
+      "url": "./audio/voices/S1194.wav",
+      "offset": 0.01535,
+      "duration": 0.85,
+      "license": "CC0-1.0",
+      "profile": "F04"
+    },
+    {
+      "code": "S1195",
+      "url": "./audio/voices/S1195.wav",
+      "offset": 0.02773,
+      "duration": 0.76,
+      "license": "CC0-1.0",
+      "profile": "F04"
+    },
+    {
+      "code": "S1196",
+      "url": "./audio/voices/S1196.wav",
+      "offset": 0.03733,
+      "duration": 0.57,
+      "license": "CC0-1.0",
+      "profile": "F04"
+    },
+    {
+      "code": "S1197",
+      "url": "./audio/voices/S1197.wav",
+      "offset": 0.00352,
+      "duration": 1.32,
+      "license": "CC0-1.0",
+      "profile": "F04"
+    },
+    {
+      "code": "S1198",
+      "url": "./audio/voices/S1198.wav",
+      "offset": 0.01867,
+      "duration": 0.92,
+      "license": "CC0-1.0",
+      "profile": "F04"
+    },
+    {
+      "code": "S1199",
+      "url": "./audio/voices/S1199.wav",
+      "offset": 0.03675,
+      "duration": 1.06,
+      "license": "CC0-1.0",
+      "profile": "F04"
+    },
+    {
+      "code": "S1200",
+      "url": "./audio/voices/S1200.wav",
+      "offset": 0.02938,
+      "duration": 1.02,
+      "license": "CC0-1.0",
+      "profile": "F04"
+    },
+    {
+      "code": "S1201",
+      "url": "./audio/voices/S1201.wav",
+      "offset": 0.146,
+      "duration": 0.988,
+      "license": "CC-BY-3.0",
+      "profile": "F05"
+    },
+    {
+      "code": "S1202",
+      "url": "./audio/voices/S1202.wav",
+      "offset": 0.08056,
+      "duration": 1.432,
+      "license": "CC-BY-3.0",
+      "profile": "F05"
+    }
+  ],
+  "female-death": [
+    {
+      "code": "S2493",
+      "url": "./audio/voices/S2493.wav",
+      "offset": 0.31238,
+      "duration": 2.473,
+      "license": "CC0-1.0",
+      "profile": "F06"
+    },
+    {
+      "code": "S2494",
+      "url": "./audio/voices/S2494.wav",
+      "offset": 0.51802,
+      "duration": 2.403,
+      "license": "CC0-1.0",
+      "profile": "F06"
+    },
+    {
+      "code": "S1373",
+      "url": "./audio/voices/S1373.wav",
+      "offset": 0,
+      "duration": 1.54,
+      "license": "CC0-1.0",
+      "profile": "F07"
+    },
+    {
+      "code": "S1374",
+      "url": "./audio/voices/S1374.wav",
+      "offset": 0.02714,
+      "duration": 4.853,
+      "license": "CC0-1.0",
+      "profile": "F07"
+    }
+  ]
+}

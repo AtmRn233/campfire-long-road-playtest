@@ -1,5 +1,4 @@
 import { formationCapacity, formationColumns, standardFormation, validFormation } from "./battle.mjs";
-import { strongestUnit } from "./morale.mjs";
 
 const rows = [["front","前排"],["back","后排"],["reserve","预备队"]];
 const laneNames = ["左翼","左侧","中路","右侧","右翼"];
@@ -16,15 +15,12 @@ export function createOpeningScreen({text,renderCard,send}) {
   let state;
   let storageKey;
   let presets = {};
-  let enemyPresets = {};
-  let side = "player";
   let drafts;
   let width;
   let selected;
   let dragging;
 
   const actualWidth = () => state.fieldColumns.length;
-  const activePresets = () => side === "enemy" ? enemyPresets : presets;
 
   function readPresets(key) {
     try { return JSON.parse(localStorage.getItem(key)) ?? {}; }
@@ -36,34 +32,23 @@ export function createOpeningScreen({text,renderCard,send}) {
     if (screen.hidden) {
       storageKey = "campfire.formation." + key;
       presets = readPresets(storageKey);
-      enemyPresets = state.enemyFormationEnabled ? readPresets(storageKey+"-enemy") : {};
-      $("open-enemy-formation").hidden = !state.enemyFormationEnabled;
-      $("prepare-enemy-encounter").hidden = !state.enemyFormationEnabled;
       screen.style.setProperty("--encounter-art",'url("./art/' + state.terrain.id + '.webp")');
+      $("encounter-title").textContent = state.encounter ? "遭遇" + state.encounter.name : "遭遇敌军";
+      $("encounter-hostile-title").textContent = state.encounter?.hostile === false ? "对方" : "敌方";
+      $("withdraw-encounter").textContent = state.encounter?.hostile === false ? "离开" : "撤退";
       screen.hidden = false;
     }
     updateSummary();
   }
 
-  function plannedLeader(side) {
-    const preset = (side === "enemy" ? enemyPresets : presets)[actualWidth()];
-    const team = state.units.filter(unit=>unit.side===side && unit.hp>0);
-    if (!validFormation(state,actualWidth(),preset,side)) return team.find(unit=>unit.leader);
-    const fielded = new Set([...preset.front,...preset.back]);
-    return strongestUnit(team.filter(unit=>fielded.has(unit.id)));
-  }
-
   function updateSummary() {
+    const start = $("start-encounter");
+    start.disabled = !!state.encounter && !state.units.some(unit=>unit.side==="enemy" && unit.hp>0 && !unit.noncombatant);
+    if (start.disabled) start.title = "对方没有战斗人员";
+    else start.removeAttribute("title");
     for (const [side,id] of [["player","encounter-friendly"],["enemy","encounter-hostile"]]) {
-      const leader = plannedLeader(side);
       $(id).innerHTML = state.units.filter(unit=>unit.side===side)
-        .map(unit=>renderCard({...unit,leader:unit === leader})).join("");
-    }
-    $("encounter-plan").textContent = actualWidth() + " 路 · " +
-      (validFormation(state,actualWidth(),presets[actualWidth()]) ? "已保存阵型" : "默认阵型");
-    if (state.enemyFormationEnabled) {
-      $("open-enemy-formation").textContent = validFormation(state,actualWidth(),enemyPresets[actualWidth()],"enemy")
-        ? "敌方布阵（已保存）" : "敌方布阵（测试）";
+        .map(unit=>renderCard(unit)).join("");
     }
   }
 
@@ -118,8 +103,8 @@ export function createOpeningScreen({text,renderCard,send}) {
   function chooseWidth(value) {
     width = value;
     if (!drafts[width]) {
-      const saved = activePresets()[width];
-      drafts[width] = validFormation(state,width,saved,side) ? structuredClone(saved) : standardFormation(state,width,side);
+      const saved = presets[width];
+      drafts[width] = validFormation(state,width,saved) ? structuredClone(saved) : standardFormation(state,width);
     }
     for (const button of widthControl.querySelectorAll("button")) {
       button.setAttribute("aria-pressed",String(Number(button.dataset.openingWidth) === width));
@@ -147,9 +132,7 @@ export function createOpeningScreen({text,renderCard,send}) {
     board.querySelector('[data-opening-id="' + CSS.escape(placed) + '"]')?.focus();
   }
 
-  function openEditor(team) {
-    side = team;
-    $("formation-title").textContent = side === "enemy" ? "敌方布阵" : "布阵";
+  function openEditor() {
     drafts = {};
     const widths = Array.from({length:state.lanes.length - 1},(_,index)=>index + 2);
     if (actualWidth() < 2) widths.unshift(actualWidth());
@@ -159,8 +142,7 @@ export function createOpeningScreen({text,renderCard,send}) {
     chooseWidth(actualWidth());
     editor.showModal();
   }
-  $("open-formation").onclick = () => openEditor("player");
-  $("open-enemy-formation").onclick = () => openEditor("enemy");
+  $("open-formation").onclick = openEditor;
   widthControl.addEventListener("click",event => {
     const button = event.target.closest("button[data-opening-width]");
     if (button && Number(button.dataset.openingWidth) !== width) chooseWidth(Number(button.dataset.openingWidth));
@@ -202,23 +184,26 @@ export function createOpeningScreen({text,renderCard,send}) {
     dragging = false;
   });
   $("save-formation").onclick = () => {
-    Object.assign(activePresets(),drafts);
+    Object.assign(presets,drafts);
     try {
-      localStorage.setItem(storageKey+(side === "enemy" ? "-enemy" : ""),JSON.stringify(activePresets()));
+      localStorage.setItem(storageKey,JSON.stringify(presets));
+      $("open-formation").removeAttribute("title");
     } catch {
-      $("encounter-plan").title = "无法写入浏览器存储，阵型仍可用于本场。";
+      $("open-formation").title = "无法写入浏览器存储，阵型仍可用于本场。";
     }
     updateSummary();
     editor.close();
   };
 
   $("open-parley").onclick = () => {
-    const lead = plannedLeader("player") ?? state.units.find(unit=>unit.side==="player");
-    const opponent = plannedLeader("enemy") ?? state.units.find(unit=>unit.side==="enemy");
+    const speaker = state.units.find(unit=>unit.id==="pc" && unit.side==="player") ?? state.units.find(unit=>unit.side==="player");
+    const opponent = state.units.find(unit=>unit.side==="enemy");
     $("encounter-choice-title").textContent = "阵前对话";
-    $("encounter-choice-body").innerHTML = '<p><strong>' + text(lead.name) +
-      '</strong>　我们无意交战。能让条路吗？</p><p><strong>' + text(opponent.name) +
-      '</strong>　收起兵器退回去。再往前，就是开战。</p>';
+    $("encounter-choice-body").innerHTML = '<p><strong>' + text(speaker.name) +
+      (state.encounter?.hostile === false ? '</strong>　打扰了。你们要去哪里？</p><p><strong>' :
+        '</strong>　我们无意交战。能让条路吗？</p><p><strong>') + text(opponent.name) +
+      (state.encounter?.hostile === false ? '</strong>　你好。我们只是在这条路上遇见了。</p>' :
+        '</strong>　收起兵器退回去。再往前，就是开战。</p>');
     $("confirm-encounter-surrender").hidden = true;
     choice.showModal();
   };
@@ -235,10 +220,8 @@ export function createOpeningScreen({text,renderCard,send}) {
   $("withdraw-encounter").onclick = () => send({type:"encounterExit",decision:"retreat"});
   $("start-encounter").onclick = () => {
     const preset = presets[actualWidth()];
-    const enemy = enemyPresets[actualWidth()];
     send({type:"start",
       ...(validFormation(state,actualWidth(),preset) ? {formation:preset} : {}),
-      ...(state.enemyFormationEnabled && validFormation(state,actualWidth(),enemy,"enemy") ? {enemyFormation:enemy} : {}),
     });
   };
   return {load,hide:()=>{screen.hidden = true;}};

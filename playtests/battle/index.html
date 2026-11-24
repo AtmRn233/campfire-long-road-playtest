@@ -3,18 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#111a20">
+  <meta name="theme-color" content="#17120e">
   <title>战斗演示</title>
   <script>if (window === window.parent) location.replace("../../");</script>
   <link rel="stylesheet" href="../weatherVisual.css">
   <link rel="stylesheet" href="./style.css?v=team-preparation">
+  <link rel="stylesheet" href="./portraitHandles.css">
 </head>
 <body>
   <main id="encounter-screen" class="encounter-screen" aria-labelledby="encounter-title" hidden>
-    <header class="encounter-heading">
-      <h1 id="encounter-title">遭遇敌军</h1>
-    </header>
     <div class="encounter-layout">
+      <header class="encounter-heading">
+        <h1 id="encounter-title">遭遇敌军</h1>
+      </header>
       <section class="encounter-side friendly" aria-labelledby="encounter-friendly-title">
         <h2 id="encounter-friendly-title">我方</h2>
         <div id="encounter-friendly" class="encounter-roster"></div>
@@ -23,14 +24,11 @@
         <button id="open-parley" class="quiet" type="button" aria-haspopup="dialog">对话</button>
         <button id="withdraw-encounter" class="quiet" type="button">撤退</button>
         <button id="open-surrender" class="quiet" type="button" aria-haspopup="dialog">投降</button>
+        <button id="start-encounter" class="primary" type="button">开始战斗</button>
         <button class="quiet" type="button" disabled>自动战斗</button>
         <div class="encounter-deployment">
           <button id="prepare-encounter" class="quiet" type="button" data-prepare-encounter>更换装备</button>
-          <button id="prepare-enemy-encounter" class="quiet" type="button" data-prepare-encounter="enemy" hidden>敌方换装（测试）</button>
           <button id="open-formation" class="quiet" type="button" aria-haspopup="dialog">布阵</button>
-          <button id="open-enemy-formation" class="quiet" type="button" aria-haspopup="dialog" hidden>敌方布阵（测试）</button>
-          <span id="encounter-plan"></span>
-          <button id="start-encounter" class="primary" type="button">开始战斗</button>
         </div>
       </section>
       <section class="encounter-side opposing" aria-labelledby="encounter-hostile-title">
@@ -43,7 +41,7 @@
     <aside class="turn-track" aria-labelledby="turn-order-title">
       <p id="round-counter"></p>
       <h2 id="turn-order-title">行动顺序</h2>
-      <ol id="turn-order"></ol>
+      <ol id="turn-order" tabindex="0" aria-label="行动角色列表"></ol>
     </aside>
     <section class="theater" aria-label="战场">
       <header class="masthead">
@@ -87,19 +85,23 @@
       </div>
     </section>
     <aside id="battle-log" class="chronicle" aria-labelledby="log-title">
-      <div class="chronicle-controls" aria-label="战场操作" role="group">
-        <button id="start-battle" class="primary" data-start type="button" hidden>开始战斗</button>
-        <div class="battle-options">
-          <button id="open-rules" class="quiet" type="button" aria-haspopup="dialog">规则</button>
-          <button id="battle-sound" class="quiet" type="button" aria-label="战斗音效" aria-pressed="true">音效开</button>
-          <button id="battle-dialogue" class="quiet" type="button" aria-label="战斗对话" aria-pressed="true">对话开</button>
-        </div>
-        <button id="reset-battle" class="quiet" type="button" data-reset>重开</button>
-      </div>
       <header class="chronicle-heading">
         <h2 id="log-title">战斗记录</h2>
-        <span id="battle-phase" role="status"></span>
+        <details id="battle-options" class="battle-options">
+          <summary aria-label="战斗记录设置" title="战斗记录设置">⚙️</summary>
+          <div class="battle-option-menu" role="group" aria-label="战斗设置">
+            <button id="battle-sound" class="quiet" type="button" role="switch" aria-label="战斗音效" aria-checked="true">音效<span class="switch-track" aria-hidden="true"></span></button>
+            <button id="battle-dialogue" class="quiet" type="button" role="switch" aria-label="战斗对话" aria-checked="true">对话<span class="switch-track" aria-hidden="true"></span></button>
+            <button id="battle-blood" class="quiet" type="button" role="switch" aria-label="战斗血迹" aria-checked="true" hidden>血迹<span class="switch-track" aria-hidden="true"></span></button>
+            <button id="battle-morale-log" class="quiet" type="button" role="switch" aria-label="显示士气变化日志" aria-checked="true">士气日志<span class="switch-track" aria-hidden="true"></span></button>
+          </div>
+        </details>
       </header>
+      <div class="chronicle-controls" aria-label="战场操作" role="group">
+        <button id="start-battle" class="primary" data-start type="button" hidden>开始战斗</button>
+        <button id="open-rules" class="quiet" type="button" aria-haspopup="dialog">规则</button>
+        <button id="reset-battle" class="quiet" type="button" data-reset>重开</button>
+      </div>
       <ol id="log" aria-live="polite" tabindex="0" aria-label="战斗记录列表"></ol>
     </aside>
   </main>
@@ -165,7 +167,8 @@
     <button type="button" data-skill>技能</button>
     <button id="defend-action" type="button" data-defend>防御</button>
     <button id="dodge-action" type="button" data-dodge>闪避</button>
-    <button type="button" data-items>物品</button>
+    <button type="button" data-items>道具</button>
+    <button type="button" data-current-details aria-haspopup="dialog">详情</button>
     <button id="move-action" type="button" data-move>移动</button>
     <button id="retreat-action" type="button" data-retreat>撤退</button>
   </div>
@@ -192,7 +195,7 @@
       <button id="confirm-encounter-surrender" class="primary" type="button" hidden>确认投降</button>
     </form>
   </dialog>
-  <dialog id="unit-dialog" class="unit-dialog" aria-labelledby="unit-heading">
+  <dialog id="unit-dialog" class="unit-dialog" aria-labelledby="unit-heading" closedby="any">
     <header class="unit-dialog-head">
       <div class="unit-identity"><h2 id="unit-heading"></h2><span id="unit-level" class="unit-level"></span></div>
       <form method="dialog"><button class="quiet" type="submit" aria-label="关闭人物详情">关闭</button></form>
@@ -201,7 +204,6 @@
       <button type="button" role="tab" id="unit-profile" data-unit-tab="profile" aria-controls="unit-view" aria-selected="true">基本信息</button>
       <button type="button" role="tab" id="unit-attributes" data-unit-tab="attributes" aria-controls="unit-view" aria-selected="false" tabindex="-1">属性</button>
       <button type="button" role="tab" id="unit-equipment" data-unit-tab="equipment" aria-controls="unit-view" aria-selected="false" tabindex="-1">装备</button>
-      <button type="button" role="tab" id="unit-items" data-unit-tab="items" aria-controls="unit-view" aria-selected="false" tabindex="-1">物品</button>
       <button type="button" role="tab" id="unit-mount" data-unit-tab="mount" aria-controls="unit-view" aria-selected="false" tabindex="-1" disabled>坐骑</button>
       <button type="button" role="tab" id="unit-background" data-unit-tab="background" aria-controls="unit-view" aria-selected="false" tabindex="-1">背景</button>
       <button type="button" role="tab" id="unit-dialogue" data-unit-tab="dialogue" aria-controls="unit-view" aria-selected="false" tabindex="-1">对话</button>
@@ -214,7 +216,10 @@
       <div class="portrait-photo">
         <p id="portrait-status" role="status"></p>
         <canvas id="portrait-original" role="img" aria-label="原始立绘" hidden></canvas>
-        <div id="portrait-crop" tabindex="0" aria-label="面部取景框，拖动或按方向键调整位置" hidden></div>
+        <div id="portrait-crop" tabindex="0" aria-label="面部取景框，拖动边缘缩放，拖动框内移动" hidden>
+          <span data-edge="left" aria-hidden="true"></span><span data-edge="right" aria-hidden="true"></span>
+          <span data-edge="top" aria-hidden="true"></span><span data-edge="bottom" aria-hidden="true"></span>
+        </div>
       </div>
       <aside class="portrait-tools">
         <form method="dialog"><button class="quiet portrait-close" type="submit" aria-label="关闭大图" autofocus>×</button></form>
@@ -229,8 +234,7 @@
       </aside>
     </div>
     <footer id="portrait-controls" hidden>
-      <label for="portrait-size">框选大小</label>
-      <input id="portrait-size" type="range" min="18" max="100" step="1">
+      <span>拖动框边缩放 · 拖动框内移动</span>
       <button id="portrait-save" class="primary" type="button">保存</button>
     </footer>
   </dialog>

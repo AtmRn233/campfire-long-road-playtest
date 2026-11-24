@@ -1,12 +1,12 @@
 :root {
   color-scheme: dark;
-  --page: #191f1b;
-  --panel: #222a23;
-  --raised: #2b342b;
-  --edge: #39443a;
-  --ink: #eee9d9;
-  --muted: #b2b5a5;
-  --gold: #dcc493;
+  --page: #171512;
+  --panel: #29221c;
+  --raised: #382b21;
+  --edge: #775a41;
+  --ink: #f1e4d0;
+  --muted: #ccb99f;
+  --gold: #e7ba86;
   --title-font: Georgia, "Songti SC", SimSun, serif;
   font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
 }
@@ -22,12 +22,12 @@ button {
   cursor: pointer;
   white-space: nowrap;
 }
-button:hover { border-color: #8c9477; background: #374234; }
+button:hover { border-color: #d48f57; background: #4a3426; }
 button:disabled { opacity: .44; cursor: default; }
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .topbar {
   display: flex; align-items: center; flex-wrap: wrap;
-  padding: 4px 7px; gap: 4px 12px; border-bottom: 1px solid var(--edge); background: #202720;
+  padding: 4px 7px; gap: 4px 12px; border-bottom: 1px solid var(--edge); background: linear-gradient(100deg, #3b2e24, #201a16);
 }
 .brand, .file-actions { display: flex; align-items: center; gap: 5px; }
 .brand { white-space: nowrap; }
@@ -43,17 +43,17 @@ h1 { font: 700 17px/1.15 var(--title-font); margin: 0; color: var(--gold); }
 .workspace { display: grid; grid-template-columns: clamp(170px, 18vw, 228px) minmax(0, 1fr); min-height: 0; }
 .sidebar {
   display: flex; flex-direction: column; gap: 8px; padding: 7px;
-  background: var(--panel); border-right: 1px solid var(--edge);
+  background: linear-gradient(135deg, #31261e, var(--panel) 85%); border-right: 1px solid var(--edge);
   min-height: 0;
 }
 .library { display: flex; flex-direction: column; min-height: 0; flex: 1; }
 .library h2, .inspector h2 { font-size: .96rem; margin: 0; letter-spacing: .04em; }
 .mode-tabs {
   display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; margin: 5px 0; padding: 2px;
-  border: 1px solid var(--edge); border-radius: 7px; background: #1c241d;
+  border: 1px solid var(--edge); border-radius: 7px; background: #211a15;
 }
 .mode-tabs button { padding: 5px 3px; border-color: transparent; background: transparent; font-size: .875rem; }
-.mode-tabs button[aria-pressed="true"] { color: var(--gold); background: #394134; border-color: #4b5746; }
+.mode-tabs button[aria-pressed="true"] { color: #33251b; background: #e5bd91; border-color: #edc99f; }
 .palette {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start;
   gap: 7px; min-height: 0; overflow: auto; padding: 2px 3px 4px 2px; scrollbar-width: thin;
@@ -61,9 +61,9 @@ h1 { font: 700 17px/1.15 var(--title-font); margin: 0; color: var(--gold); }
 .swatch {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   min-width: 0; min-height: 78px; gap: 5px; padding: 6px 3px;
-  background: #2b352b; font-size: .81rem; white-space: normal;
+  background: #30261e; font-size: .81rem; white-space: normal;
 }
-.swatch[aria-pressed="true"] { border-color: var(--gold); background: #3e4937; color: #f8e2ad; }
+.swatch[aria-pressed="true"] { border-color: var(--gold); background: #523826; color: #fff0d4; }
 .swatch[draggable="true"] { cursor: grab; }
 .swatch-art {
   display: grid; place-items: center; width: 54px; height: 38px; flex: none;
@@ -79,11 +79,11 @@ h1 { font: 700 17px/1.15 var(--title-font); margin: 0; color: var(--gold); }
 output { font: 600 .82rem ui-monospace, Consolas, monospace; color: var(--gold); white-space: nowrap; }
 .site-fields { display: grid; grid-template-columns: 35px minmax(0, 1fr); align-items: center; gap: 6px; font-size: .82rem; }
 .site-fields[hidden], [hidden] { display: none; }
-.site-fields input { width: 100%; padding: 6px 8px; color: var(--ink); background: #1c241e; border: 1px solid var(--edge); border-radius: 5px; }
+.site-fields input { width: 100%; padding: 6px 8px; color: var(--ink); background: #211a15; border: 1px solid var(--edge); border-radius: 5px; }
 .selection-meta { font-size: .79rem; color: var(--muted); }
 .place-lore {
   padding: 8px 10px; max-height: min(160px, 25dvh); overflow: auto;
-  border-left: 2px solid var(--gold); border-radius: 3px; background: #2b352b;
+  border-left: 2px solid var(--gold); border-radius: 3px; background: #30251d;
 }
 .place-lore h3 { margin: 0 0 4px; font-size: .9rem; color: var(--gold); }
 .place-lore p { margin: 0; font-size: .84rem; line-height: 1.65; }

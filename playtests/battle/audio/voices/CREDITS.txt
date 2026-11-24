@@ -1,0 +1,957 @@
+Character hurt/death recordings — 136 preserved recordings; 41 active selections
+Changes: peak normalized to 0.5 and converted to PCM WAV in the audition library; leading silence skipped only at playback.
+No pitch changes for voice playback.
+
+S1176 — M01 wolfwoot / 受伤
+Title: Voice Clip Pack - Male Adventurer RPG / hurt0
+Author/performer: wolfwoot
+Source: https://opengameart.org/content/voice-clip-pack-male-adventurer-rpg
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/adventurer-voice/originals/RPG Male Adventurer/hurt0.wav; segment 0.0–0.554 seconds
+
+S1177 — M01 wolfwoot / 受伤
+Title: Voice Clip Pack - Male Adventurer RPG / hurt1
+Author/performer: wolfwoot
+Source: https://opengameart.org/content/voice-clip-pack-male-adventurer-rpg
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/adventurer-voice/originals/RPG Male Adventurer/hurt1.wav; segment 0.0–0.969 seconds
+
+S1178 — M01 wolfwoot / 受伤
+Title: Voice Clip Pack - Male Adventurer RPG / hurt2
+Author/performer: wolfwoot
+Source: https://opengameart.org/content/voice-clip-pack-male-adventurer-rpg
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/adventurer-voice/originals/RPG Male Adventurer/hurt2.wav; segment 0.0–0.843 seconds
+
+S1179 — M01 wolfwoot / 受伤
+Title: Voice Clip Pack - Male Adventurer RPG / hurt3
+Author/performer: wolfwoot
+Source: https://opengameart.org/content/voice-clip-pack-male-adventurer-rpg
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/adventurer-voice/originals/RPG Male Adventurer/hurt3.wav; segment 0.0–0.321 seconds
+
+S1180 — M01 wolfwoot / 受伤
+Title: Voice Clip Pack - Male Adventurer RPG / hurt4
+Author/performer: wolfwoot
+Source: https://opengameart.org/content/voice-clip-pack-male-adventurer-rpg
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/adventurer-voice/originals/RPG Male Adventurer/hurt4.wav; segment 0.0–0.501 seconds
+
+S1181 — M01 wolfwoot / 受伤
+Title: Voice Clip Pack - Male Adventurer RPG / hurt5
+Author/performer: wolfwoot
+Source: https://opengameart.org/content/voice-clip-pack-male-adventurer-rpg
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/adventurer-voice/originals/RPG Male Adventurer/hurt5.wav; segment 0.0–1.147 seconds
+
+S1182 — M01 wolfwoot / 受伤
+Title: Voice Clip Pack - Male Adventurer RPG / hurt6
+Author/performer: wolfwoot
+Source: https://opengameart.org/content/voice-clip-pack-male-adventurer-rpg
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/adventurer-voice/originals/RPG Male Adventurer/hurt6.wav; segment 0.0–0.354 seconds
+
+S1183 — M01 wolfwoot / 受伤
+Title: Voice Clip Pack - Male Adventurer RPG / hurt7
+Author/performer: wolfwoot
+Source: https://opengameart.org/content/voice-clip-pack-male-adventurer-rpg
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/adventurer-voice/originals/RPG Male Adventurer/hurt7.wav; segment 0.0–0.633 seconds
+
+S1184 — M01 wolfwoot / 受伤
+Title: Voice Clip Pack - Male Adventurer RPG / hurt8
+Author/performer: wolfwoot
+Source: https://opengameart.org/content/voice-clip-pack-male-adventurer-rpg
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/adventurer-voice/originals/RPG Male Adventurer/hurt8.wav; segment 0.0–0.326 seconds
+
+S1185 — M01 wolfwoot / 受伤
+Title: Voice Clip Pack - Male Adventurer RPG / hurt9
+Author/performer: wolfwoot
+Source: https://opengameart.org/content/voice-clip-pack-male-adventurer-rpg
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/adventurer-voice/originals/RPG Male Adventurer/hurt9.wav; segment 0.0–0.476 seconds
+
+S1244 — M01 wolfwoot / 死亡
+Title: Voice Clip Pack - Male Adventurer RPG / death0
+Author/performer: wolfwoot
+Source: https://opengameart.org/content/voice-clip-pack-male-adventurer-rpg
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/adventurer-voice/originals/RPG Male Adventurer/death0.wav; segment 0.0–2.878 seconds
+
+S1245 — M01 wolfwoot / 死亡
+Title: Voice Clip Pack - Male Adventurer RPG / death1
+Author/performer: wolfwoot
+Source: https://opengameart.org/content/voice-clip-pack-male-adventurer-rpg
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/adventurer-voice/originals/RPG Male Adventurer/death1.wav; segment 0.0–1.704 seconds
+
+S1203 — M02 Michel Baradari / 受伤
+Title: 11 male human pain/death sounds / pain1
+Author/performer: Michel Baradari
+Source: https://lpc.opengameart.org/content/11-male-human-paindeath-sounds
+License: CC-BY-3.0 (licenses/CC-BY-3.0.txt)
+Original: sources/male-baradari/originals/player/pain1.wav; segment 0.0–0.547 seconds
+
+S1204 — M02 Michel Baradari / 受伤
+Title: 11 male human pain/death sounds / pain2
+Author/performer: Michel Baradari
+Source: https://lpc.opengameart.org/content/11-male-human-paindeath-sounds
+License: CC-BY-3.0 (licenses/CC-BY-3.0.txt)
+Original: sources/male-baradari/originals/player/pain2.wav; segment 0.0–0.637 seconds
+
+S1205 — M02 Michel Baradari / 受伤
+Title: 11 male human pain/death sounds / pain3
+Author/performer: Michel Baradari
+Source: https://lpc.opengameart.org/content/11-male-human-paindeath-sounds
+License: CC-BY-3.0 (licenses/CC-BY-3.0.txt)
+Original: sources/male-baradari/originals/player/pain3.wav; segment 0.0–0.542 seconds
+
+S1206 — M02 Michel Baradari / 受伤
+Title: 11 male human pain/death sounds / pain4
+Author/performer: Michel Baradari
+Source: https://lpc.opengameart.org/content/11-male-human-paindeath-sounds
+License: CC-BY-3.0 (licenses/CC-BY-3.0.txt)
+Original: sources/male-baradari/originals/player/pain4.wav; segment 0.0–0.695 seconds
+
+S1207 — M02 Michel Baradari / 受伤
+Title: 11 male human pain/death sounds / pain5
+Author/performer: Michel Baradari
+Source: https://lpc.opengameart.org/content/11-male-human-paindeath-sounds
+License: CC-BY-3.0 (licenses/CC-BY-3.0.txt)
+Original: sources/male-baradari/originals/player/pain5.wav; segment 0.0–0.622 seconds
+
+S1208 — M02 Michel Baradari / 受伤
+Title: 11 male human pain/death sounds / pain6
+Author/performer: Michel Baradari
+Source: https://lpc.opengameart.org/content/11-male-human-paindeath-sounds
+License: CC-BY-3.0 (licenses/CC-BY-3.0.txt)
+Original: sources/male-baradari/originals/player/pain6.wav; segment 0.0–0.524 seconds
+
+S1209 — M02 Michel Baradari / 受伤
+Title: 11 male human pain/death sounds / painh
+Author/performer: Michel Baradari
+Source: https://lpc.opengameart.org/content/11-male-human-paindeath-sounds
+License: CC-BY-3.0 (licenses/CC-BY-3.0.txt)
+Original: sources/male-baradari/originals/player/painh.wav; segment 0.0–0.486 seconds
+
+S1210 — M02 Michel Baradari / 受伤
+Title: 11 male human pain/death sounds / paino
+Author/performer: Michel Baradari
+Source: https://lpc.opengameart.org/content/11-male-human-paindeath-sounds
+License: CC-BY-3.0 (licenses/CC-BY-3.0.txt)
+Original: sources/male-baradari/originals/player/paino.wav; segment 0.0–0.479 seconds
+
+S1246 — M02 Michel Baradari / 死亡
+Title: 11 male human pain/death sounds / deathh
+Author/performer: Michel Baradari
+Source: https://lpc.opengameart.org/content/11-male-human-paindeath-sounds
+License: CC-BY-3.0 (licenses/CC-BY-3.0.txt)
+Original: sources/male-baradari/originals/player/deathh.wav; segment 0.0–0.735 seconds
+
+S1247 — M02 Michel Baradari / 死亡
+Title: 11 male human pain/death sounds / die1
+Author/performer: Michel Baradari
+Source: https://lpc.opengameart.org/content/11-male-human-paindeath-sounds
+License: CC-BY-3.0 (licenses/CC-BY-3.0.txt)
+Original: sources/male-baradari/originals/player/die1.wav; segment 0.0–0.973 seconds
+
+S1248 — M02 Michel Baradari / 死亡
+Title: 11 male human pain/death sounds / die2
+Author/performer: Michel Baradari
+Source: https://lpc.opengameart.org/content/11-male-human-paindeath-sounds
+License: CC-BY-3.0 (licenses/CC-BY-3.0.txt)
+Original: sources/male-baradari/originals/player/die2.wav; segment 0.0–1.138 seconds
+
+S1217 — M03 remaxim / 受伤
+Title: 7 male pain voices / 10
+Author/performer: remaxim
+Source: https://lpc.opengameart.org/content/7-male-pain-voices
+License: CC-BY-SA-3.0 (licenses/CC-BY-SA-3.0.txt)
+Original: sources/male-pain-seven/originals/10.wav; segment 0.0–0.813 seconds
+
+S1218 — M03 remaxim / 受伤
+Title: 7 male pain voices / 11
+Author/performer: remaxim
+Source: https://lpc.opengameart.org/content/7-male-pain-voices
+License: CC-BY-SA-3.0 (licenses/CC-BY-SA-3.0.txt)
+Original: sources/male-pain-seven/originals/11.wav; segment 0.0–0.715 seconds
+
+S1219 — M03 remaxim / 受伤
+Title: 7 male pain voices / 12
+Author/performer: remaxim
+Source: https://lpc.opengameart.org/content/7-male-pain-voices
+License: CC-BY-SA-3.0 (licenses/CC-BY-SA-3.0.txt)
+Original: sources/male-pain-seven/originals/12.wav; segment 0.0–1.063 seconds
+
+S1220 — M03 remaxim / 受伤
+Title: 7 male pain voices / 13
+Author/performer: remaxim
+Source: https://lpc.opengameart.org/content/7-male-pain-voices
+License: CC-BY-SA-3.0 (licenses/CC-BY-SA-3.0.txt)
+Original: sources/male-pain-seven/originals/13.wav; segment 0.0–0.641 seconds
+
+S1221 — M03 remaxim / 受伤
+Title: 7 male pain voices / 14
+Author/performer: remaxim
+Source: https://lpc.opengameart.org/content/7-male-pain-voices
+License: CC-BY-SA-3.0 (licenses/CC-BY-SA-3.0.txt)
+Original: sources/male-pain-seven/originals/14.wav; segment 0.0–0.438 seconds
+
+S1222 — M03 remaxim / 受伤
+Title: 7 male pain voices / 8
+Author/performer: remaxim
+Source: https://lpc.opengameart.org/content/7-male-pain-voices
+License: CC-BY-SA-3.0 (licenses/CC-BY-SA-3.0.txt)
+Original: sources/male-pain-seven/originals/8.wav; segment 0.0–1.566 seconds
+
+S1223 — M03 remaxim / 受伤
+Title: 7 male pain voices / 9
+Author/performer: remaxim
+Source: https://lpc.opengameart.org/content/7-male-pain-voices
+License: CC-BY-SA-3.0 (licenses/CC-BY-SA-3.0.txt)
+Original: sources/male-pain-seven/originals/9.wav; segment 0.0–0.875 seconds
+
+S1249 — M03 remaxim / 死亡
+Title: 2 male death voices / 15
+Author/performer: remaxim
+Source: https://lpc.opengameart.org/content/2-male-death-voices
+License: CC-BY-SA-3.0 (licenses/CC-BY-SA-3.0.txt)
+Original: sources/male-death-two/originals/15.wav; segment 0.0–2.0 seconds
+
+S1250 — M03 remaxim / 死亡
+Title: 2 male death voices / 16
+Author/performer: remaxim
+Source: https://lpc.opengameart.org/content/2-male-death-voices
+License: CC-BY-SA-3.0 (licenses/CC-BY-SA-3.0.txt)
+Original: sources/male-death-two/originals/16.wav; segment 0.0–3.625 seconds
+
+S1375 — M04 HaelDB 声线 1 / 死亡
+Title: Male Grunt/Yelling sounds / 1yell1
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/1yell1.wav; segment 0.0–1.0 seconds
+
+S1376 — M04 HaelDB 声线 1 / 死亡
+Title: Male Grunt/Yelling sounds / 1yell10
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/1yell10.wav; segment 0.0–1.0 seconds
+
+S1377 — M04 HaelDB 声线 1 / 死亡
+Title: Male Grunt/Yelling sounds / 1yell11
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/1yell11.wav; segment 0.0–2.0 seconds
+
+S1378 — M04 HaelDB 声线 1 / 死亡
+Title: Male Grunt/Yelling sounds / 1yell12
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/1yell12.wav; segment 0.0–1.5 seconds
+
+S1379 — M04 HaelDB 声线 1 / 死亡
+Title: Male Grunt/Yelling sounds / 1yell13
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/1yell13.wav; segment 0.0–1.0 seconds
+
+S1380 — M04 HaelDB 声线 1 / 死亡
+Title: Male Grunt/Yelling sounds / 1yell14
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/1yell14.wav; segment 0.0–1.0 seconds
+
+S1381 — M04 HaelDB 声线 1 / 死亡
+Title: Male Grunt/Yelling sounds / 1yell15
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/1yell15.wav; segment 0.0–1.0 seconds
+
+S1382 — M04 HaelDB 声线 1 / 死亡
+Title: Male Grunt/Yelling sounds / 1yell16
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/1yell16.wav; segment 0.0–1.5 seconds
+
+S1383 — M04 HaelDB 声线 1 / 死亡
+Title: Male Grunt/Yelling sounds / 1yell2
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/1yell2.wav; segment 0.0–1.0 seconds
+
+S1384 — M04 HaelDB 声线 1 / 死亡
+Title: Male Grunt/Yelling sounds / 1yell3
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/1yell3.wav; segment 0.0–2.5 seconds
+
+S1385 — M04 HaelDB 声线 1 / 死亡
+Title: Male Grunt/Yelling sounds / 1yell4
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/1yell4.wav; segment 0.0–1.5 seconds
+
+S1386 — M04 HaelDB 声线 1 / 死亡
+Title: Male Grunt/Yelling sounds / 1yell5
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/1yell5.wav; segment 0.0–1.5 seconds
+
+S1387 — M04 HaelDB 声线 1 / 死亡
+Title: Male Grunt/Yelling sounds / 1yell6
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/1yell6.wav; segment 0.0–1.0 seconds
+
+S1388 — M04 HaelDB 声线 1 / 死亡
+Title: Male Grunt/Yelling sounds / 1yell7
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/1yell7.wav; segment 0.0–1.5 seconds
+
+S1389 — M04 HaelDB 声线 1 / 死亡
+Title: Male Grunt/Yelling sounds / 1yell8
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/1yell8.wav; segment 0.0–1.0 seconds
+
+S1390 — M04 HaelDB 声线 1 / 死亡
+Title: Male Grunt/Yelling sounds / 1yell9
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/1yell9.wav; segment 0.0–1.0 seconds
+
+S1391 — M05 HaelDB 声线 2 / 死亡
+Title: Male Grunt/Yelling sounds / 2yell1
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/2yell1.wav; segment 0.0–1.0 seconds
+
+S1392 — M05 HaelDB 声线 2 / 死亡
+Title: Male Grunt/Yelling sounds / 2yell10
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/2yell10.wav; segment 0.0–1.0 seconds
+
+S1393 — M05 HaelDB 声线 2 / 死亡
+Title: Male Grunt/Yelling sounds / 2yell11
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/2yell11.wav; segment 0.0–1.5 seconds
+
+S1394 — M05 HaelDB 声线 2 / 死亡
+Title: Male Grunt/Yelling sounds / 2yell2
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/2yell2.wav; segment 0.0–1.5 seconds
+
+S1395 — M05 HaelDB 声线 2 / 死亡
+Title: Male Grunt/Yelling sounds / 2yell3
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/2yell3.wav; segment 0.0–1.0 seconds
+
+S1396 — M05 HaelDB 声线 2 / 死亡
+Title: Male Grunt/Yelling sounds / 2yell4
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/2yell4.wav; segment 0.0–2.0 seconds
+
+S1397 — M05 HaelDB 声线 2 / 死亡
+Title: Male Grunt/Yelling sounds / 2yell5
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/2yell5.wav; segment 0.0–2.0 seconds
+
+S1398 — M05 HaelDB 声线 2 / 死亡
+Title: Male Grunt/Yelling sounds / 2yell6
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/2yell6.wav; segment 0.0–2.5 seconds
+
+S1399 — M05 HaelDB 声线 2 / 死亡
+Title: Male Grunt/Yelling sounds / 2yell7
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/2yell7.wav; segment 0.0–1.5 seconds
+
+S1400 — M05 HaelDB 声线 2 / 死亡
+Title: Male Grunt/Yelling sounds / 2yell8
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/2yell8.wav; segment 0.0–1.5 seconds
+
+S1401 — M05 HaelDB 声线 2 / 死亡
+Title: Male Grunt/Yelling sounds / 2yell9
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/2yell9.wav; segment 0.0–1.5 seconds
+
+S1211 — M06 HaelDB 声线 3 / 受伤
+Title: Male Grunt/Yelling sounds / 3grunt1
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3grunt1.wav; segment 0.0–1.0 seconds
+
+S1212 — M06 HaelDB 声线 3 / 受伤
+Title: Male Grunt/Yelling sounds / 3grunt2
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3grunt2.wav; segment 0.0–1.0 seconds
+
+S1213 — M06 HaelDB 声线 3 / 受伤
+Title: Male Grunt/Yelling sounds / 3grunt3
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3grunt3.wav; segment 0.0–0.5 seconds
+
+S1214 — M06 HaelDB 声线 3 / 受伤
+Title: Male Grunt/Yelling sounds / 3grunt4
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3grunt4.wav; segment 0.0–0.5 seconds
+
+S1215 — M06 HaelDB 声线 3 / 受伤
+Title: Male Grunt/Yelling sounds / 3grunt5
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3grunt5.wav; segment 0.0–0.5 seconds
+
+S1216 — M06 HaelDB 声线 3 / 受伤
+Title: Male Grunt/Yelling sounds / 3grunt6
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3grunt6.wav; segment 0.0–1.5 seconds
+
+S1402 — M06 HaelDB 声线 3 / 死亡
+Title: Male Grunt/Yelling sounds / 3yell1
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3yell1.wav; segment 0.0–2.5 seconds
+
+S1403 — M06 HaelDB 声线 3 / 死亡
+Title: Male Grunt/Yelling sounds / 3yell10
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3yell10.wav; segment 0.0–1.5 seconds
+
+S1404 — M06 HaelDB 声线 3 / 死亡
+Title: Male Grunt/Yelling sounds / 3yell11
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3yell11.wav; segment 0.0–1.5 seconds
+
+S1405 — M06 HaelDB 声线 3 / 死亡
+Title: Male Grunt/Yelling sounds / 3yell12
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3yell12.wav; segment 0.0–1.0 seconds
+
+S1406 — M06 HaelDB 声线 3 / 死亡
+Title: Male Grunt/Yelling sounds / 3yell13
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3yell13.wav; segment 0.0–3.5 seconds
+
+S1407 — M06 HaelDB 声线 3 / 死亡
+Title: Male Grunt/Yelling sounds / 3yell14
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3yell14.wav; segment 0.0–2.0 seconds
+
+S1408 — M06 HaelDB 声线 3 / 死亡
+Title: Male Grunt/Yelling sounds / 3yell15
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3yell15.wav; segment 0.0–1.0 seconds
+
+S1409 — M06 HaelDB 声线 3 / 死亡
+Title: Male Grunt/Yelling sounds / 3yell16
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3yell16.wav; segment 0.0–3.5 seconds
+
+S1410 — M06 HaelDB 声线 3 / 死亡
+Title: Male Grunt/Yelling sounds / 3yell2
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3yell2.wav; segment 0.0–1.5 seconds
+
+S1411 — M06 HaelDB 声线 3 / 死亡
+Title: Male Grunt/Yelling sounds / 3yell3
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3yell3.wav; segment 0.0–1.0 seconds
+
+S1412 — M06 HaelDB 声线 3 / 死亡
+Title: Male Grunt/Yelling sounds / 3yell4
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3yell4.wav; segment 0.0–1.0 seconds
+
+S1413 — M06 HaelDB 声线 3 / 死亡
+Title: Male Grunt/Yelling sounds / 3yell5
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3yell5.wav; segment 0.0–1.5 seconds
+
+S1414 — M06 HaelDB 声线 3 / 死亡
+Title: Male Grunt/Yelling sounds / 3yell6
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3yell6.wav; segment 0.0–2.5 seconds
+
+S1415 — M06 HaelDB 声线 3 / 死亡
+Title: Male Grunt/Yelling sounds / 3yell7
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3yell7.wav; segment 0.0–1.0 seconds
+
+S1416 — M06 HaelDB 声线 3 / 死亡
+Title: Male Grunt/Yelling sounds / 3yell8
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3yell8.wav; segment 0.0–1.0 seconds
+
+S1417 — M06 HaelDB 声线 3 / 死亡
+Title: Male Grunt/Yelling sounds / 3yell9
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/3yell9.wav; segment 0.0–2.0 seconds
+
+S1418 — M07 HaelDB 声线 4 / 死亡
+Title: Male Grunt/Yelling sounds / yell1
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/yell1.wav; segment 0.0–4.5 seconds
+
+S1419 — M07 HaelDB 声线 4 / 死亡
+Title: Male Grunt/Yelling sounds / yell10
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/yell10.wav; segment 0.0–2.0 seconds
+
+S1420 — M07 HaelDB 声线 4 / 死亡
+Title: Male Grunt/Yelling sounds / yell11
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/yell11.wav; segment 0.0–2.5 seconds
+
+S1421 — M07 HaelDB 声线 4 / 死亡
+Title: Male Grunt/Yelling sounds / yell12
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/yell12.wav; segment 0.0–1.0 seconds
+
+S1422 — M07 HaelDB 声线 4 / 死亡
+Title: Male Grunt/Yelling sounds / yell13
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/yell13.wav; segment 0.0–1.0 seconds
+
+S1423 — M07 HaelDB 声线 4 / 死亡
+Title: Male Grunt/Yelling sounds / yell2
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/yell2.wav; segment 0.0–2.0 seconds
+
+S1424 — M07 HaelDB 声线 4 / 死亡
+Title: Male Grunt/Yelling sounds / yell3
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/yell3.wav; segment 0.0–1.5 seconds
+
+S1425 — M07 HaelDB 声线 4 / 死亡
+Title: Male Grunt/Yelling sounds / yell4
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/yell4.wav; segment 0.0–1.5 seconds
+
+S1426 — M07 HaelDB 声线 4 / 死亡
+Title: Male Grunt/Yelling sounds / yell5
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/yell5.wav; segment 0.0–2.0 seconds
+
+S1427 — M07 HaelDB 声线 4 / 死亡
+Title: Male Grunt/Yelling sounds / yell6
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/yell6.wav; segment 0.0–1.0 seconds
+
+S1428 — M07 HaelDB 声线 4 / 死亡
+Title: Male Grunt/Yelling sounds / yell7
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/yell7.wav; segment 0.0–1.0 seconds
+
+S1429 — M07 HaelDB 声线 4 / 死亡
+Title: Male Grunt/Yelling sounds / yell8
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/yell8.wav; segment 0.0–1.5 seconds
+
+S1430 — M07 HaelDB 声线 4 / 死亡
+Title: Male Grunt/Yelling sounds / yell9
+Author/performer: HaelDB
+Source: https://lpc.opengameart.org/content/male-gruntyelling-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-four-voices/originals/yelling sounds/yell9.wav; segment 0.0–1.0 seconds
+
+S1224 — M08 qubodup / 受伤
+Title: 15 vocal male strain/hurt/pain/jump sounds / slightscream-01
+Author/performer: qubodup
+Source: https://lpc.opengameart.org/content/15-vocal-male-strainhurtpainjump-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-strain/originals/slightscream-01.flac; segment 0.0–0.453 seconds
+
+S1225 — M08 qubodup / 受伤
+Title: 15 vocal male strain/hurt/pain/jump sounds / slightscream-02
+Author/performer: qubodup
+Source: https://lpc.opengameart.org/content/15-vocal-male-strainhurtpainjump-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-strain/originals/slightscream-02.flac; segment 0.0–0.363 seconds
+
+S1226 — M08 qubodup / 受伤
+Title: 15 vocal male strain/hurt/pain/jump sounds / slightscream-03
+Author/performer: qubodup
+Source: https://lpc.opengameart.org/content/15-vocal-male-strainhurtpainjump-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-strain/originals/slightscream-03.flac; segment 0.0–0.558 seconds
+
+S1227 — M08 qubodup / 受伤
+Title: 15 vocal male strain/hurt/pain/jump sounds / slightscream-04
+Author/performer: qubodup
+Source: https://lpc.opengameart.org/content/15-vocal-male-strainhurtpainjump-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-strain/originals/slightscream-04.flac; segment 0.0–0.583 seconds
+
+S1228 — M08 qubodup / 受伤
+Title: 15 vocal male strain/hurt/pain/jump sounds / slightscream-05
+Author/performer: qubodup
+Source: https://lpc.opengameart.org/content/15-vocal-male-strainhurtpainjump-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-strain/originals/slightscream-05.flac; segment 0.0–0.695 seconds
+
+S1229 — M08 qubodup / 受伤
+Title: 15 vocal male strain/hurt/pain/jump sounds / slightscream-06
+Author/performer: qubodup
+Source: https://lpc.opengameart.org/content/15-vocal-male-strainhurtpainjump-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-strain/originals/slightscream-06.flac; segment 0.0–0.517 seconds
+
+S1230 — M08 qubodup / 受伤
+Title: 15 vocal male strain/hurt/pain/jump sounds / slightscream-07
+Author/performer: qubodup
+Source: https://lpc.opengameart.org/content/15-vocal-male-strainhurtpainjump-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-strain/originals/slightscream-07.flac; segment 0.0–0.486 seconds
+
+S1231 — M08 qubodup / 受伤
+Title: 15 vocal male strain/hurt/pain/jump sounds / slightscream-08
+Author/performer: qubodup
+Source: https://lpc.opengameart.org/content/15-vocal-male-strainhurtpainjump-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-strain/originals/slightscream-08.flac; segment 0.0–0.414 seconds
+
+S1232 — M08 qubodup / 受伤
+Title: 15 vocal male strain/hurt/pain/jump sounds / slightscream-09
+Author/performer: qubodup
+Source: https://lpc.opengameart.org/content/15-vocal-male-strainhurtpainjump-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-strain/originals/slightscream-09.flac; segment 0.0–0.531 seconds
+
+S1233 — M08 qubodup / 受伤
+Title: 15 vocal male strain/hurt/pain/jump sounds / slightscream-10
+Author/performer: qubodup
+Source: https://lpc.opengameart.org/content/15-vocal-male-strainhurtpainjump-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-strain/originals/slightscream-10.flac; segment 0.0–0.73 seconds
+
+S1234 — M08 qubodup / 受伤
+Title: 15 vocal male strain/hurt/pain/jump sounds / slightscream-11
+Author/performer: qubodup
+Source: https://lpc.opengameart.org/content/15-vocal-male-strainhurtpainjump-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-strain/originals/slightscream-11.flac; segment 0.0–0.33 seconds
+
+S1235 — M08 qubodup / 受伤
+Title: 15 vocal male strain/hurt/pain/jump sounds / slightscream-12
+Author/performer: qubodup
+Source: https://lpc.opengameart.org/content/15-vocal-male-strainhurtpainjump-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-strain/originals/slightscream-12.flac; segment 0.0–0.384 seconds
+
+S1236 — M08 qubodup / 受伤
+Title: 15 vocal male strain/hurt/pain/jump sounds / slightscream-13
+Author/performer: qubodup
+Source: https://lpc.opengameart.org/content/15-vocal-male-strainhurtpainjump-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-strain/originals/slightscream-13.flac; segment 0.0–0.541 seconds
+
+S1237 — M08 qubodup / 受伤
+Title: 15 vocal male strain/hurt/pain/jump sounds / slightscream-14
+Author/performer: qubodup
+Source: https://lpc.opengameart.org/content/15-vocal-male-strainhurtpainjump-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-strain/originals/slightscream-14.flac; segment 0.0–0.601 seconds
+
+S1238 — M08 qubodup / 受伤
+Title: 15 vocal male strain/hurt/pain/jump sounds / slightscream-15
+Author/performer: qubodup
+Source: https://lpc.opengameart.org/content/15-vocal-male-strainhurtpainjump-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/male-strain/originals/slightscream-15.flac; segment 0.0–0.791 seconds
+
+S1239 — M09 Aharabada / 受伤
+Title: Man hurt sounds / ManHurt · 片段 01/5
+Author/performer: Aharabada
+Source: https://lpc.opengameart.org/content/man-hurt-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/voices-hurt/originals/ManHurt.ogg; segment 0.2–0.58 seconds
+
+S1240 — M09 Aharabada / 受伤
+Title: Man hurt sounds / ManHurt · 片段 02/5
+Author/performer: Aharabada
+Source: https://lpc.opengameart.org/content/man-hurt-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/voices-hurt/originals/ManHurt.ogg; segment 0.93–1.56 seconds
+
+S1241 — M09 Aharabada / 受伤
+Title: Man hurt sounds / ManHurt · 片段 03/5
+Author/performer: Aharabada
+Source: https://lpc.opengameart.org/content/man-hurt-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/voices-hurt/originals/ManHurt.ogg; segment 2.13–2.81 seconds
+
+S1242 — M09 Aharabada / 受伤
+Title: Man hurt sounds / ManHurt · 片段 04/5
+Author/performer: Aharabada
+Source: https://lpc.opengameart.org/content/man-hurt-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/voices-hurt/originals/ManHurt.ogg; segment 3.55–4.12 seconds
+
+S1243 — M09 Aharabada / 受伤
+Title: Man hurt sounds / ManHurt · 片段 05/5
+Author/performer: Aharabada
+Source: https://lpc.opengameart.org/content/man-hurt-sounds
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/voices-hurt/originals/ManHurt.ogg; segment 4.94–6.57 seconds
+
+S2484 — F01 Cici · 可爱 / 受伤
+Title: Female RPG Voice Starter Pack / damaged1
+Author/performer: Cici Fyre
+Source: https://opengameart.org/content/female-rpg-voice-starter-pack
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-cici/originals/RPG Voice Starter Pack/Type 1/damaged1.wav; segment 0–0.287 seconds
+
+S2485 — F01 Cici · 可爱 / 受伤
+Title: Female RPG Voice Starter Pack / damaged2
+Author/performer: Cici Fyre
+Source: https://opengameart.org/content/female-rpg-voice-starter-pack
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-cici/originals/RPG Voice Starter Pack/Type 1/damaged2.wav; segment 0–0.384 seconds
+
+S2486 — F01 Cici · 可爱 / 受伤
+Title: Female RPG Voice Starter Pack / damaged3
+Author/performer: Cici Fyre
+Source: https://opengameart.org/content/female-rpg-voice-starter-pack
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-cici/originals/RPG Voice Starter Pack/Type 1/damaged3.wav; segment 0–0.322 seconds
+
+S2487 — F02 Cici · 中音 / 受伤
+Title: Female RPG Voice Starter Pack / damaged1
+Author/performer: Cici Fyre
+Source: https://opengameart.org/content/female-rpg-voice-starter-pack
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-cici/originals/RPG Voice Starter Pack/Type 2/damaged1.wav; segment 0–0.511 seconds
+
+S2488 — F02 Cici · 中音 / 受伤
+Title: Female RPG Voice Starter Pack / damaged2
+Author/performer: Cici Fyre
+Source: https://opengameart.org/content/female-rpg-voice-starter-pack
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-cici/originals/RPG Voice Starter Pack/Type 2/damaged2.wav; segment 0–0.328 seconds
+
+S2489 — F02 Cici · 中音 / 受伤
+Title: Female RPG Voice Starter Pack / damaged3
+Author/performer: Cici Fyre
+Source: https://opengameart.org/content/female-rpg-voice-starter-pack
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-cici/originals/RPG Voice Starter Pack/Type 2/damaged3.wav; segment 0–0.379 seconds
+
+S2490 — F03 Cici · 成熟 / 受伤
+Title: Female RPG Voice Starter Pack / damaged1
+Author/performer: Cici Fyre
+Source: https://opengameart.org/content/female-rpg-voice-starter-pack
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-cici/originals/RPG Voice Starter Pack/Type 3/damaged1.wav; segment 0–0.465 seconds
+
+S2491 — F03 Cici · 成熟 / 受伤
+Title: Female RPG Voice Starter Pack / damaged2
+Author/performer: Cici Fyre
+Source: https://opengameart.org/content/female-rpg-voice-starter-pack
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-cici/originals/RPG Voice Starter Pack/Type 3/damaged2.wav; segment 0–0.375 seconds
+
+S2492 — F03 Cici · 成熟 / 受伤
+Title: Female RPG Voice Starter Pack / damaged3
+Author/performer: Cici Fyre
+Source: https://opengameart.org/content/female-rpg-voice-starter-pack
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-cici/originals/RPG Voice Starter Pack/Type 3/damaged3.wav; segment 0–0.384 seconds
+
+S1194 — F04 AuraVoice / 受伤
+Title: Female Hurt Grunts & Groans / female_hurt_grunts_groans_1 · 片段 01/7
+Author/performer: AuraVoice / Nocturnal_Vanguard
+Source: https://opengameart.org/content/female-hurt-grunts-groans
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-aura/originals/female_hurt_grunts_groans_1.ogg; segment 0.41–1.26 seconds
+
+S1195 — F04 AuraVoice / 受伤
+Title: Female Hurt Grunts & Groans / female_hurt_grunts_groans_1 · 片段 02/7
+Author/performer: AuraVoice / Nocturnal_Vanguard
+Source: https://opengameart.org/content/female-hurt-grunts-groans
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-aura/originals/female_hurt_grunts_groans_1.ogg; segment 2.07–2.83 seconds
+
+S1196 — F04 AuraVoice / 受伤
+Title: Female Hurt Grunts & Groans / female_hurt_grunts_groans_1 · 片段 03/7
+Author/performer: AuraVoice / Nocturnal_Vanguard
+Source: https://opengameart.org/content/female-hurt-grunts-groans
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-aura/originals/female_hurt_grunts_groans_1.ogg; segment 3.68–4.25 seconds
+
+S1197 — F04 AuraVoice / 受伤
+Title: Female Hurt Grunts & Groans / female_hurt_grunts_groans_1 · 片段 04/7
+Author/performer: AuraVoice / Nocturnal_Vanguard
+Source: https://opengameart.org/content/female-hurt-grunts-groans
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-aura/originals/female_hurt_grunts_groans_1.ogg; segment 4.91–6.23 seconds
+
+S1198 — F04 AuraVoice / 受伤
+Title: Female Hurt Grunts & Groans / female_hurt_grunts_groans_1 · 片段 05/7
+Author/performer: AuraVoice / Nocturnal_Vanguard
+Source: https://opengameart.org/content/female-hurt-grunts-groans
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-aura/originals/female_hurt_grunts_groans_1.ogg; segment 7.31–8.23 seconds
+
+S1199 — F04 AuraVoice / 受伤
+Title: Female Hurt Grunts & Groans / female_hurt_grunts_groans_1 · 片段 06/7
+Author/performer: AuraVoice / Nocturnal_Vanguard
+Source: https://opengameart.org/content/female-hurt-grunts-groans
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-aura/originals/female_hurt_grunts_groans_1.ogg; segment 9.35–10.41 seconds
+
+S1200 — F04 AuraVoice / 受伤
+Title: Female Hurt Grunts & Groans / female_hurt_grunts_groans_1 · 片段 07/7
+Author/performer: AuraVoice / Nocturnal_Vanguard
+Source: https://opengameart.org/content/female-hurt-grunts-groans
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-aura/originals/female_hurt_grunts_groans_1.ogg; segment 11.66–12.68 seconds
+
+S1201 — F05 RiddlesYouThis / 受伤
+Title: Female RPG Character voice pack / gah
+Author/performer: RiddlesYouThis
+Source: https://lpc.opengameart.org/content/female-rpg-character-voice-pack
+License: CC-BY-3.0 (licenses/CC-BY-3.0.txt)
+Original: sources/female-rpg/originals/gah.ogg; segment 0.0–0.988 seconds
+
+S1202 — F05 RiddlesYouThis / 受伤
+Title: Female RPG Character voice pack / oww
+Author/performer: RiddlesYouThis
+Source: https://lpc.opengameart.org/content/female-rpg-character-voice-pack
+License: CC-BY-3.0 (licenses/CC-BY-3.0.txt)
+Original: sources/female-rpg/originals/oww.ogg; segment 0.0–1.432 seconds
+
+S2493 — F06 Sky Rae / 死亡
+Title: Dying Voices - Female - RPG / DEATH -- HIgh dying noise
+Author/performer: Sky Rae / Galacti-Chron
+Source: https://opengameart.org/content/dying-voices-female-rpg
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-skyrae/originals/DEATH -- HIgh dying noise.mp3; segment 0–2.473 seconds
+
+S2494 — F06 Sky Rae / 死亡
+Title: Dying Voices - Female - RPG / DEATH -- misc female british noise
+Author/performer: Sky Rae / Galacti-Chron
+Source: https://opengameart.org/content/dying-voices-female-rpg
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-skyrae/originals/DEATH -- misc female british noise.mp3; segment 0–2.403 seconds
+
+S1373 — F07 WuxiaScrub / 死亡
+Title: Female high-pitched scream SFX / screams_0 · 片段 01/2
+Author/performer: WuxiaScrub
+Source: https://opengameart.org/content/female-high-pitched-scream-sfx
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-scream/originals/screams_0.ogg; segment 0.0–1.54 seconds
+
+S1374 — F07 WuxiaScrub / 死亡
+Title: Female high-pitched scream SFX / screams_0 · 片段 02/2
+Author/performer: WuxiaScrub
+Source: https://opengameart.org/content/female-high-pitched-scream-sfx
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/female-scream/originals/screams_0.ogg; segment 1.78–6.633 seconds
+
+2026-11-24 selection: male-hurt 12, male-death 7 (gold audition recommendations only); female-hurt 18, female-death 4 (all). Other credited files are preserved and excluded from runtime loading.

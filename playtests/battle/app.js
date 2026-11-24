@@ -1,14 +1,21 @@
-import { battleSession } from "./client.mjs?v=battle-help";
+import { battleParticipantGear, battleSession } from "./client.mjs?v=battle-help";
 import { weatherParticles } from "../weatherVisual.mjs";
-import { armorPenetrationReduction, battleSwapProblem, defenseFor, dodgeAfterAction, restorationTargets } from "./battle.mjs";
+import { battleSwapProblem, dodgeAfterAction, restorationTargets, battleProfileCombat } from "./battle.mjs";
 import { fieldSideOf } from "./grid.mjs";
-import { battleItemLabels, battleItemsBySlot } from "./loadout.mjs";
+import { battleItemsBySlot } from "./loadout.mjs";
 import { createOpeningScreen } from "./opening.mjs";
-import { createPortraitViewer, portraitBackground, portraitSource } from "./portraits.mjs";
+import { createPortraitViewer, headshotCrop, portraitBackground, portraitSource } from "./portraits.mjs";
+import { battleFaction, createBattleLogLabels } from "./battleLog.mjs";
+import { createBloodEffects } from "./blood.mjs";
+import { characterAttributeSheet, renderCharacterProfileData } from "./characterSheet.mjs";
+
+import { selectedBattleRecordings, selectedStrikeFeedback } from "./selectedAudio.mjs";
+import { battleVoicePools, randomVoiceIndex } from "./voiceAudio.mjs";
 
 const $ = (id) => document.getElementById(id);
 const colors = {gold:"#ffe0a0", dull:"#baa48a", hostile:"#ff947d"};
 const names = {front:"前排",back:"后排",reserve:"预备队"};
+const turnLabels = {player:"我方行动",ally:"盟友行动",enemy:"敌方行动"};
 const professionIcons = {
   战士:"⚔️",野蛮人:"🪓",武僧:"👊",游侠:"🏹",盗贼:"🗡️",圣骑士:"🛡️",牧师:"✝️",德鲁伊:"🌿",
   吟游诗人:"🎶",法师:"🪄",术士:"✨",契约术士:"📜",农夫:"🌾",牧人:"🐑",渔人:"🎣",采集人:"🧺",
@@ -17,13 +24,9 @@ const professionIcons = {
 };
 const embedded = window.parent !== window;
 const frontier = embedded && new URLSearchParams(location.search).get("mode") === "frontier";
-const phases = {setup:"布阵阶段",player:"我方行动",enemy:"敌方行动",reinforcement:"补位阶段",ended:"战斗结算"};
 document.body.classList.toggle("embedded",embedded);
 $("reset-battle").hidden = frontier;
 $("battle-layout").hidden = frontier;
-const attributeLabels = {
-  strength:"力量",dexterity:"敏捷",constitution:"体质",intelligence:"智力",perception:"感知",charisma:"魅力",
-};
 const strikeLabels = {hit:"命中",miss:"失手",dodge:"闪避",block:"格挡"};
 const eventLabels = {
   ready:"进攻前",hit:"命中",miss:strikeLabels.miss,light:"轻伤",heavy:"重伤",allyFall:"队友阵亡",fall:"阵亡",
@@ -32,6 +35,7 @@ const eventLabels = {
 const strikeLabel = ({outcome,hit}) => strikeLabels[outcome] ?? (hit === false ? strikeLabels.miss : strikeLabels.hit);
 let state;
 let battleId;
+let partyIds = frontier ? new Set(["pc"]) : undefined;
 let lastAmmoSpent = 0;
 let formationKey;
 let selected = "roland";
@@ -51,21 +55,37 @@ let detailAnchor;
 let detailCloseTimer;
 let reachAnchor;
 let reachPoint;
+let aimedEnemy;
+let actionMenuActor;
 let inspectedUnit;
 let inspectedTrigger;
 let inspectedTab = "profile";
+let portraitUpdates = {};
 const meterHistory = new Map();
 const meterLossDuration = 1250;
+const bloodAppearanceDelay = 280;
 
 const text = (value) => String(value).replace(/[&<>"']/g,(ch) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[ch]);
+const logLabels = createBattleLogLabels(text);
+const blood = createBloodEffects($("battle-blood"),$("effects"));
+const stanceActions = {dodge:"闪避",guard:"防御"};
 const opening = frontier && createOpeningScreen({
   text,renderCard:(unit,slot)=>renderCard(unit,undefined,undefined,true,slot),send,
 });
 const signedPercent = (value) => (value > 0 ? "+" : "") + value + "%";
 const byId = (id) => state.units.find((unit) => unit.id === id);
 const portraitPath = unit => unit.portrait === null ? "" : "./art/" + (unit.portrait ?? unit.id) + ".webp";
+function unitPortraitSource(unit) {
+  return portraitSource({...unit,...portraitUpdates[unit.portraitCropKey]},portraitPath(unit));
+}
 const portraitViewer = createPortraitViewer($("portrait-dialog"),()=>{
+  orderVersion = undefined;
   $("unit-dialog").close();
+  render();
+});
+window.addEventListener("storage",event=>{
+  if (!state || !event.key?.startsWith("campfire.battle-face.")) return;
+  orderVersion = undefined;
   render();
 });
 function portraitImage(unit,className="",source=portraitPath(unit),useSprite=true) {
@@ -79,9 +99,9 @@ function portraitImage(unit,className="",source=portraitPath(unit),useSprite=tru
 }
 
 function cardPortrait(unit) {
-  const source = portraitSource(unit,portraitPath(unit));
-  const crop = source && (portraitViewer.savedCrop(unit) ?? source.defaultCrop);
-  if (!crop) return portraitImage(unit,"face",unit.profilePortrait ?? portraitPath(unit),!unit.profilePortrait);
+  const source = unitPortraitSource(unit);
+  const crop = source && headshotCrop(source,portraitViewer.savedCrop(unit,source));
+  if (!crop) return portraitImage(unit,"face",source?.url ?? "",source?.columns > 1);
   const {size,position} = portraitBackground(source,crop);
   const url = 'url("' + source.url.replaceAll('"','%22') + '")';
   return '<span class="face portrait-crop-asset" aria-hidden="true" style="background-image:' + text(url) +
@@ -110,18 +130,21 @@ const battleCues = {
 
 const battleSoundKey = "battle-sound-muted";
 const battleDialogueKey = "battle-dialogue-muted";
-const paddedArmor = new Set(["布衣","棉甲","皮甲","布帽","皮帽"]);
+const moraleLogKey = "battle-morale-log-muted";
 const recordedSounds = new Map();
 const recordedLevels = {
+  block:.65,missOne:.32,missTwo:.38,bowLaunch:.55,crossbowLaunch:.55,throwLaunch:.55,armorHit:.70,bluntHit:.62,sharpHit:.60,fleshHit:.60,
+  projectileSoft:.65,projectileMetal:.70,projectileMiss:.32,crossbowMiss:.32,shieldBreak:.60,
   swing:.32,axe:.40,thrust:.36,bow:.55,crossbow:.55,arrowPass:.32,dodge:.29,
   plate:.70,padded:.62,parry:.65,shield:.72,flesh:.60,break:.47,fall:.45,step:.25,
 };
-const injuryVoiceLevels = {light:.42,heavy:.53,death:.60};
 let soundEnabled = true;
 let dialogueEnabled = true;
+let moraleLogEnabled = true;
 try {
   soundEnabled = localStorage.getItem(battleSoundKey) !== "1";
   dialogueEnabled = localStorage.getItem(battleDialogueKey) !== "1";
+  moraleLogEnabled = localStorage.getItem(moraleLogKey) !== "1";
 } catch {}
 let audioContext;
 let audioOutput;
@@ -144,8 +167,35 @@ async function unlockBattleAudio() {
           const file = Uint8Array.from(atob(encoded),char=>char.charCodeAt(0));
           return audioContext.decodeAudioData(file.buffer);
         });
-        Promise.all(decoded).then(buffers=>recordedSounds.set(name,{buffers,next:0})).catch(()=>{});
+        Promise.all(decoded).then(buffers=>recordedSounds.set(battleVoicePools[name]?"legacy-"+name:name,{buffers,next:0})).catch(()=>{});
       }
+      for (const [name,entry] of Object.entries(selectedBattleRecordings)) {
+        fetch(new URL(entry.url,import.meta.url)).then(response=>{
+          if (!response.ok) throw new Error("Audio HTTP " + response.status);
+          return response.arrayBuffer();
+        }).then(bytes=>audioContext.decodeAudioData(bytes))
+          .then(buffer=>recordedSounds.set(name,{buffers:[buffer],next:0,offset:entry.offset??0}))
+          .catch(error=>console.warn("无法读取已选音效 " + entry.code,error));
+      }
+      // 四个池交错加载，限制同时下载／解码的数量；同一战斗页只加载一次。
+      const poolEntries=Object.entries(battleVoicePools),voiceQueue=[];
+      for(const [name] of poolEntries) recordedSounds.set(name,{buffers:[],offsets:[],next:-1,random:true});
+      for(let i=0;i<Math.max(...poolEntries.map(([,entries])=>entries.length));i++) {
+        for(const [name,entries] of poolEntries) if(entries[i]) voiceQueue.push({name,entry:entries[i]});
+      }
+      let voiceIndex=0;
+      const loadVoices=async()=>{
+        while(voiceIndex<voiceQueue.length) {
+          const {name,entry}=voiceQueue[voiceIndex++];
+          try {
+            const response=await fetch(new URL(entry.url,import.meta.url));
+            if(!response.ok) throw new Error("Audio HTTP "+response.status);
+            const buffer=await audioContext.decodeAudioData(await response.arrayBuffer());
+            const pool=recordedSounds.get(name);pool.buffers.push(buffer);pool.offsets.push(entry.offset);
+          } catch(error) { console.warn("无法读取人物音效 "+entry.code,error); }
+        }
+      };
+      void Promise.all(Array.from({length:4},loadVoices));
     }
     if (audioContext.state !== "running") await audioContext.resume();
   } catch {}
@@ -154,17 +204,20 @@ async function unlockBattleAudio() {
 function playBattleSound(name,delay=0,volume=1) {
   if (!soundEnabled || audioContext?.state !== "running") return;
   const recording = recordedSounds.get(name);
-  if (recording) {
+  if (recording?.buffers.length) {
     const sample = audioContext.createBufferSource();
-    sample.buffer = recording.buffers[recording.next];
-    recording.next = (recording.next+1) % recording.buffers.length;
-    sample.playbackRate.value = .985 + Math.random()*.03;
+    const index=recording.random?randomVoiceIndex(recording.buffers.length,recording.next):recording.next;
+    sample.buffer = recording.buffers[index];
+    recording.next = recording.random?index:(index+1)%recording.buffers.length;
+    sample.playbackRate.value = recording.random?1:.985 + Math.random()*.03;
     const gain = audioContext.createGain();
     gain.gain.value = (recordedLevels[name] ?? 1)*volume;
     sample.connect(gain).connect(audioOutput);
-    sample.start(audioContext.currentTime+delay);
+    sample.start(audioContext.currentTime+delay,recording.offsets?.[index]??recording.offset??0);
     return;
   }
+  // 首次解码尚未完成时沿用同一性别的旧声，不影响命中及叫声的先后。
+  if(battleVoicePools[name]) return playBattleSound(name.endsWith("-hurt")?name.replace(/-hurt$/,"-light"):"legacy-"+name,delay,volume);
   for (const layer of battleCues[name] ?? []) {
     const start = audioContext.currentTime + delay + layer.offset;
     const end = start + layer.duration;
@@ -196,43 +249,19 @@ function playBattleSound(name,delay=0,volume=1) {
   }
 }
 
-function playStrikeSounds(strike,weapon,target,fallen) {
-  const ranged = weapon?.range === "远程";
-  const attacks = {手斧:"axe",矛:"thrust",弓:"bow",弩:"crossbow"};
-  const attack = weapon?.magic ? "magic" : attacks[weapon?.name] ?? "swing";
-  const impact = ranged ? .16 : .105;
-  playBattleSound(attack);
-  if (strike.outcome === "block") playBattleSound(strike.guard ? "shield" : "parry",impact);
-  else if (strike.outcome === "dodge") playBattleSound("dodge",impact);
-  else if (strike.hit === false) {
-    if (ranged && !weapon?.magic) playBattleSound("arrowPass",impact-.035);
-  }
-  else if (strike.blocked) {
-    const armor = target?.armor[strike.zone]?.name;
-    playBattleSound(paddedArmor.has(armor) ? "padded" : "plate",impact);
-  } else playBattleSound("flesh",impact);
-  if (target && strike.hpLoss > 0) {
-    const profile = target.voiceProfile ?? (target.id === "vera" ? "female" : "male");
-    const threshold = target.maxHp*.3;
-    const heavy = target.hp>threshold && target.hp-strike.hpLoss<=threshold;
-    const injury = fallen ? "death" : heavy ? "heavy" : "light";
-    playBattleSound(profile+"-"+injury,impact+.035,injuryVoiceLevels[injury]);
-  }
-  if (strike.guard?.broken) playBattleSound("break",impact+.09);
-  if (fallen || strike.dismounted) playBattleSound("fall",impact+.19);
+function playStrikeSounds(cues) {
+  for (const cue of cues) playBattleSound(cue.name,cue.delay,cue.volume);
 }
 
 function refreshSoundButton() {
   const button = $("battle-sound");
-  button.setAttribute("aria-pressed",String(soundEnabled));
-  button.textContent = soundEnabled ? "音效开" : "音效关";
+  button.setAttribute("aria-checked",String(soundEnabled));
 }
 
 refreshSoundButton();
 function refreshDialogueButton() {
   const button = $("battle-dialogue");
-  button.setAttribute("aria-pressed",String(dialogueEnabled));
-  button.textContent = dialogueEnabled ? "对话开" : "对话关";
+  button.setAttribute("aria-checked",String(dialogueEnabled));
 }
 refreshDialogueButton();
 battleSession.setDialogue(dialogueEnabled);
@@ -243,6 +272,21 @@ $("battle-dialogue").addEventListener("click",() => {
   battleSession.setDialogue(dialogueEnabled);
   if (state) receive(battleSession.snapshot());
 });
+const moraleLogButton = $("battle-morale-log");
+function refreshMoraleLogButton() {
+  moraleLogButton.setAttribute("aria-checked",String(moraleLogEnabled));
+}
+refreshMoraleLogButton();
+moraleLogButton.addEventListener("click",() => {
+  moraleLogEnabled = !moraleLogEnabled;
+  try { localStorage.setItem(moraleLogKey,moraleLogEnabled ? "0" : "1"); } catch {}
+  refreshMoraleLogButton();
+  if (state) renderLog();
+});
+const battleOptions = $("battle-options");
+document.addEventListener("click",event => {
+  if (battleOptions.open && !battleOptions.contains(event.target)) battleOptions.open = false;
+});
 for (const event of ["pointerdown","keydown"]) document.addEventListener(event,unlockBattleAudio);
 $("battle-sound").addEventListener("click",async () => {
   soundEnabled = !soundEnabled;
@@ -251,7 +295,6 @@ $("battle-sound").addEventListener("click",async () => {
   if (audioOutput) audioOutput.gain.setValueAtTime(soundEnabled ? .38 : 0,audioContext.currentTime);
   if (soundEnabled) {
     await unlockBattleAudio();
-    playBattleSound("shield",0,.24);
   }
 });
 
@@ -294,8 +337,12 @@ function receive(next) {
     if (frontier) selected = "pc";
   }
   const strike = next.lastStrike;
-  const freshStrike = previous && strike && strike.id !== lastStrike && Date.now() - strike.at < 2100;
+  const freshStrike = previous?.match === next.match && strike && strike.id !== lastStrike && Date.now() - strike.at < 2100;
   const fallen = freshStrike && !next.units.some(unit=>unit.id===strike.target);
+  const strikeSounds = freshStrike ? selectedStrikeFeedback(strike,
+    previous.units.find(unit=>unit.id===strike.actor)?.weapon,
+    previous.units.find(unit=>unit.id===strike.target),fallen) : [];
+  const afterStrike = strikeSounds.length ? Math.max(...strikeSounds.map(cue=>cue.delay))+.12 : 0;
   const departedPoint = fallen ? cardPoint(strike.target) : null;
   if (previous && next.match !== previous.match) {
     selected = "roland";
@@ -311,6 +358,10 @@ function receive(next) {
     $("effects").replaceChildren();
   }
   state = next;
+  if (previous?.match !== state.match || actionMenuActor !== state.order[0] || !canAct(byId(actionMenuActor))) {
+    actionMenuActor = undefined;
+  }
+  logLabels.update(state.match,state.units,partyIds);
   if (previous?.match !== state.match || !state.reinforcements?.units.includes(reinforcementUnit)) {
     reinforcementUnit = null;
   }
@@ -331,23 +382,19 @@ function receive(next) {
     const ending = {surrender:"全队溃败 · ",withdrawal:"撤离战场 · "};
     showBattleBanner((ending[state.endReason] ?? "") + result);
     if (previous) {
-      playBattleSound(state.winner === "player" ? "victory" : "defeat",freshStrike ? .54 : 0);
-      victoryTimer = setTimeout(openBattleReport,moraleChanged ? 2100 : 850);
+      playBattleSound(state.winner === "player" ? "victory" : "defeat",freshStrike ? Math.max(.54,afterStrike) : 0);
+      const delay = freshStrike && strike.hpLoss > 0 ? meterLossDuration : 850;
+      victoryTimer = setTimeout(openBattleReport,moraleChanged ? 2100 : delay);
     }
     else openBattleReport();
   } else if (state.phase === "setup") {
     showBattleBanner("");
   } else if (previous?.phase === "setup" || previous?.round !== state.round) {
     showBattleBanner("第 " + state.round + " 回合",1400);
-    if (previous) playBattleSound(previous.phase === "setup" ? "start" : "round",freshStrike ? .4 : 0);
-  }
-  if (previous?.match === state.match && state.log.some(entry=>entry.kind === "guard" && entry.id>previous.serial)) {
-    playBattleSound("shield",0,.30);
+    if (previous) playBattleSound(previous.phase === "setup" ? "start" : "round",freshStrike ? Math.max(.4,afterStrike) : 0);
   }
   if (freshStrike) {
-    const weapon = previous.units.find(unit=>unit.id===strike.actor)?.weapon;
-    const target = previous.units.find(unit=>unit.id===strike.target);
-    playStrikeSounds(strike,weapon,target,fallen);
+    playStrikeSounds(strikeSounds);
     showStrike(strike,departedPoint);
   }
   lastStrike = strike?.id;
@@ -382,12 +429,14 @@ function meter(kind, label, current, max, status="", owner) {
 function renderCard(unit,column,entry,preview=false,formationSlot) {
   const inBattle = column !== undefined;
   const fighting = inBattle && state.phase !== "setup";
+  const current = fighting && (state.phase === "player" || state.phase === "enemy") && unit.id === state.order[0];
+  const canOpenActions = current && canAct(unit);
+  const faction = current ? battleFaction(unit,partyIds) : undefined;
   const target = inBattle && aiming && targetValid(byId(selected),unit);
   const blocked = inBattle && aiming && unit.side === "enemy" && !target;
   const highlighted = !preview && unit.id === (inBattle ? (state.phase === "setup" ? selected : state.order[0]) : settlementSelection);
   const classes = ["card",unit.side];
   if (fighting || formationSlot) classes.push("battle-card");
-  if (unit.leader) classes.push("leader-card");
   if (highlighted) classes.push("selected");
   if (target) classes.push("target");
   if (blocked) classes.push("out-of-range");
@@ -403,9 +452,16 @@ function renderCard(unit,column,entry,preview=false,formationSlot) {
   const tone = morale === whiteFlag ? "routed" : morale > 0 ? "raised" : morale < 0 ? "shaken" : "steady";
   const marker = morale === whiteFlag ? "🏳️" : '<i class="morale-eagle" aria-hidden="true"></i>'.repeat(Math.max(1,Math.abs(morale)));
   const profession = unit.profession || unit.role || "职业未定";
+  const level = Math.min(10,Math.max(1,Math.trunc(Number(unit.level) || 1)));
+  const levelLabel = level + " 级";
   const cardMeter = (kind,label,part,tag) => meter(kind,label,part.current,part.max,tag,inBattle ? unit.id : undefined);
-  const resource = (unit.mount ? cardMeter("mount","骑",unit.mount) : "") ||
-    (unit.shield ? cardMeter("shield","盾",unit.shield) : unit.magic ? cardMeter("magic","魔",unit.magic) : "");
+  const gearResource = (unit.mount ? cardMeter("mount","骑",unit.mount) : "") ||
+    (unit.shield ? cardMeter("shield","盾",unit.shield) : "");
+  const energy = unit.magic ? cardMeter("magic","魔",unit.magic) :
+    inBattle ? cardMeter("stamina","耐",unit.stamina ?? {current:0,max:0}) : "";
+  const resources = cardMeter("head","盔",unit.armor.head) + cardMeter("body","甲",unit.armor.body,lootStatus) +
+    cardMeter("hp","血",{current:unit.hp,max:unit.maxHp},treatmentStatus) +
+    (inBattle ? energy + gearResource : gearResource || energy);
   const placement = formationSlot ? "" : inBattle ? ' data-card="' + unit.id + '" style="grid-column:' + column + '"' :
     (preview ? ' data-encounter-unit="' : ' data-spoils-card="') + unit.id + '"';
   const details = 'data-details="' + unit.id + '" aria-haspopup="dialog"';
@@ -419,23 +475,24 @@ function renderCard(unit,column,entry,preview=false,formationSlot) {
     text(unit.name + (inBattle ? "详情" : "结算操作")) + '"><i></i><i></i><i></i></button>';
   return '<div class="' + classes.join(" ") + '"' + placement + '>' +
     '<button type="button" class="card-select" ' + selection + ' aria-label="' +
-    text(formationSlot ? formationSlot.label + " · " + unit.name : unit.name) + '"' +
+    text((formationSlot ? formationSlot.label + " · " : "") + unit.name + " · " + levelLabel) + '"' +
     (preview && !formationSlot ? '' : ' aria-pressed="' + highlighted + '"') +
+    (canOpenActions ? ' aria-controls="unit-actions" aria-expanded="' + (actionMenuActor === unit.id) + '"' : "") +
     (description ? ' aria-description="' + text(description) + '"' : '') +
     (blocked || target ? ' aria-describedby="reach-details"' : "") + '>' +
     '<span class="card-portrait">' + cardPortrait(unit) +
     (badges.length ? '<span class="portrait-statuses">' + badges.map(badge=>
       '<span class="portrait-status" title="' + text(describeBadge(badge)) + '">' +
       text(badge.name) + '<b>' + badge.turns + '</b></span>').join("") + '</span>' : "") +
-    '</span><span class="card-data"><strong>' + text(unit.name) + '</strong>' +
-    cardMeter("head","盔",unit.armor.head) + cardMeter("body","甲",unit.armor.body,lootStatus) +
-    cardMeter("hp","血",{current:unit.hp,max:unit.maxHp},treatmentStatus) + resource +
+    '</span><span class="card-data"><strong>' + text(unit.name) + '</strong>' + resources +
     '</span>' +
     '<span class="morale-mark ' + tone + '" role="img" aria-label="士气 ' + moraleLabel(morale) +
     '" title="士气 ' + moraleLabel(morale) + '">' + marker + '</span>' +
-    (unit.leader ? '<span class="leader-mark" role="img" aria-label="首领" title="首领">👑</span>' : '') +
+    '<span class="level-mark" data-level="' + level + '" role="img" aria-label="' + levelLabel + '" title="' + levelLabel + '">' + level + '</span>' +
     '<span class="profession-mark" role="img" aria-label="职业：' + text(profession) + '" title="' + text(profession) + '">' +
-    (Object.hasOwn(professionIcons,profession) ? professionIcons[profession] : "👤") + '</span></button>' + menuButton +
+    (Object.hasOwn(professionIcons,profession) ? professionIcons[profession] : "👤") + '</span>' +
+    (faction ? '<span class="turn-marker" data-faction="' + faction + '" aria-hidden="true"><span>▲</span> ' +
+      turnLabels[faction] + '</span>' : "") + '</button>' + menuButton +
     (inBattle && unit.acted ? '<span class="card-state">已行动</span>' : "") + '</div>';
 }
 
@@ -487,6 +544,7 @@ function renderRoutes() {
 }
 
 function renderBoard() {
+  const hover = reachPoint;
   closeReachDetails();
   $("ranks").innerHTML = renderRank("enemy","back") + renderRank("enemy","front") +
     renderRoutes() + renderRank("player","front") + renderRank("player","back");
@@ -505,19 +563,31 @@ function renderBoard() {
     ? '<button type="button" class="quiet" data-deploy="reserve">移入预备队</button>' : "";
   $("enemy-reserves").innerHTML = reserves(theirs);
   $("player-reserves").innerHTML = reserves(ours) + moveToReserve;
+  if (!aiming || (aimedEnemy && !byId(aimedEnemy))) setAimedEnemy();
+  if (aiming && hover) {
+    const card = document.elementFromPoint?.(hover.x,hover.y)?.closest(".out-of-range,.target");
+    if (card) showReachDetails(card,hover);
+  }
   drawArrow();
 }
 
 function positionActionMenu() {
   const menu = $("unit-actions");
-  const unit = byId(state.order[0]);
+  const unit = byId(actionMenuActor);
   const anchor = document.querySelector('[data-card="' + unit?.id + '"]');
-  if (!["player","enemy"].includes(state.phase) || !unit) {
+  if (!canAct(unit)) {
     menu.hidden = true;
     return;
   }
   menu.setAttribute("aria-label",unit.name + "的操作");
   positionCardMenu(menu,anchor);
+}
+
+function toggleActionMenu(id) {
+  const trigger = $("ranks").querySelector('[aria-controls="unit-actions"]');
+  actionMenuActor = id === actionMenuActor ? undefined : id;
+  trigger?.setAttribute("aria-expanded",String(Boolean(actionMenuActor)));
+  positionActionMenu();
 }
 
 function positionCardMenu(menu,anchor,viewport) {
@@ -550,7 +620,6 @@ function positionCardMenu(menu,anchor,viewport) {
 function renderControls() {
   const unit = byId(selected);
   const setup = state.phase === "setup";
-  $("battle-phase").textContent = phases[state.phase];
   $("start-battle").hidden = !setup;
   $("restart-battle").hidden = frontier || state.phase !== "ended";
   $("reinforcement-actions").hidden = state.phase !== "reinforcement";
@@ -586,8 +655,8 @@ function renderControls() {
 }
 
 function unitFacts(rows, modifier = "") {
-  return '<dl class="unit-facts ' + modifier + '">' + rows.map(([label,value,stat]) =>
-    '<div' + (stat ? ' data-unit-stat="' + stat + '" tabindex="0" aria-describedby="unit-stat-details"' : "") + '><dt>' + text(label) + '</dt><dd>' + text(value || "—") + '</dd></div>').join("") + '</dl>';
+  return '<dl class="unit-facts ' + modifier + '">' + rows.map(([label,value,stat,item]) =>
+    '<div' + (stat ? ' data-unit-stat="' + stat + '" tabindex="0" aria-describedby="unit-stat-details"' : "") + '><dt>' + text(label) + '</dt><dd>' + carriedIcon(item) + text(value || "—") + '</dd></div>').join("") + '</dl>';
 }
 
 const fraction = ({current,max}) => current + " / " + max;
@@ -600,126 +669,90 @@ function blockDisplay({meleeBlock,rangedBlock}) {
 function showUnitStatDetails(anchor) {
   const unit = byId(inspectedUnit);
   if (!unit) return;
-  const defense = defenseFor(unit);
-  const block = anchor.dataset.unitStat === "block";
-  const entries = block ? [
-    ["基础格挡",defense.baseBlock],
-    ["盾牌·" + (unit.shield?.name ?? "无"),defense.shieldBonus],
-    ["主动防御",defense.guarding ? defense.baseBlock+defense.shieldBonus : 0],
-  ] : [
-    ["敏捷（" + defense.rawTargetDexterity + "）",Math.max(0,(defense.rawTargetDexterity-8)*2)],
-    ["装备敏捷上限（有效敏捷 " + defense.targetDexterity + "）",defense.attributeDodge-Math.max(0,(defense.rawTargetDexterity-8)*2)],
-    ["士气" + (unit.morale === whiteFlag ? "（白旗按−3级）" : ""),defense.moraleDodge],
-    ["总闪避最低0%",defense.baseDodge-defense.attributeDodge-defense.moraleDodge],
-    ["主动闪避",defense.activeDodge],
-  ];
-  const total = block ? Math.max(defense.meleeBlock,defense.rangedBlock) : defense.dodge;
-  if (block) entries.push(["武器与盾牌格挡限制",total-defense.baseBlock-defense.shieldBonus-(defense.guarding ? defense.baseBlock+defense.shieldBonus : 0)]);
-  const conditions = block ? "对近战 " + defense.meleeBlock + "% · 对远程 " + defense.rangedBlock + "%" +
-    (unit.weapon.range === "远程" ? "；持远程武器不能格挡近战" : "") +
-    (!(unit.shield?.current>0) ? "；无完好盾牌不能格挡远程" : "") : "";
+  const detail = battleProfileCombat(unit,state.weather).profileStatSources[anchor.dataset.unitStat];
+  if (!detail) return;
   const panel = $("unit-stat-details");
-  panel.innerHTML = '<strong>' + (block ? "格挡来源" : "闪避来源") + '</strong>' +
-    entries.filter(([label,value])=>value || (!block && label.startsWith("敏捷"))).sort((a,b)=>b[1]-a[1]).map(([label,value])=>
-      '<div data-stat-value="' + value + '"><span>' + text(label) + '</span><b>' + signedPercent(value) + '</b></div>').join("") +
-    '<p>合计' + (block ? "格挡率 " : "闪避率 ") + total + '%</p>' + (conditions ? '<small>' + text(conditions) + '</small>' : "");
+  panel.innerHTML = '<strong>' + text(detail.title) + '</strong>' + detail.rows.map(([label,value])=>
+    '<div><span>' + text(label) + '</span><b>' + text(value) + '</b></div>').join("") +
+    '<p>' + text(detail.total) + '</p>' + (detail.note ? '<small>' + text(detail.note) + '</small>' : "");
   panel.hidden = false;
   positionTooltip(anchor,panel);
 }
 
 function showProfile(unit) {
-  const original = portraitImage(unit,"unit-profile-portrait",unit.profilePortrait ?? portraitPath(unit),!unit.profilePortrait);
-  const source = portraitSource(unit,portraitPath(unit));
-  $("unit-view").innerHTML = '<div class="unit-profile">' +
+  const source = unitPortraitSource(unit);
+  const original = portraitImage(unit,"unit-profile-portrait",source?.url,source?.columns > 1);
+  const profile = {...unit, ...battleProfileCombat(unit,state.weather),
+    profileMorale:moraleLabel(unit.morale),
+    profileStatuses:Object.entries(unit.statuses).map(([id,turns])=>
+      (battleStatusNames[id] ?? id) + " · " + turns + " 回合"),
+  };
+  const view = $("unit-view");
+  let host = view.querySelector(".battle-profile-host");
+  if (!host) {
+    host = document.createElement("div");
+    host.className = "battle-profile-host";
+    view.replaceChildren(host);
+  }
+  if (frontier) {
+    document.dispatchEvent(new CustomEvent("battle-profile-panel",{detail:{host,unit:profile,portrait:source}}));
+    if (host.shadowRoot) return;
+  }
+  host.innerHTML = '<div class="unit-profile">' +
     '<div class="unit-profile-art">' + (source ?
       '<button type="button" class="portrait-preview" data-portrait-view aria-label="查看原始立绘">' +
       original + '</button>' : original) + '</div>' +
-    '<div class="unit-profile-data">' + unitFacts([
-      ["种族",unit.raceName],
-      ["出身",unit.originName || "未选择"],
-      ["职业",unit.profession],
-    ],"unit-profile-identity") + unitFacts([
-      ["抗性",unit.profileResistances?.join("、")],
-      ["状态",null],
-      ["特质",unit.traits.join("、") || "无"],
-    ]) + unitFacts([
-      ["血量",unit.hp + " / " + unit.maxHp],
-      ["士气",moraleLabel(unit.morale)],
-      ["先攻",String(unit.initiative)],
-      ["格挡率",Math.max(unit.meleeBlock,unit.rangedBlock) + "%","block"],
-      ["闪避率",unit.dodge + "%","dodge"],
-      ...(unit.magic ? [["魔力",fraction(unit.magic)]] : []),
-    ],"unit-profile-vitals") + '</div></div>';
+    '<div class="unit-profile-data">' + renderCharacterProfileData(profile,true) + '</div></div>';
 }
 
 function showAttributes(unit) {
-  const attributes = Object.entries(attributeLabels);
-  const breakdown = Object.values(unit.attributeSources ?? {});
-  const columns = breakdown.some(row=>row.base !== undefined) ?
-    [["base","基础"],["race","种族"],["origin","出身"],["profession","职业"],["traits","特质"]] : [];
-  if (breakdown.some(row=>row.initial !== undefined)) columns.push(["initial","初始"]);
-  if (breakdown.length || unit.levelPoints) columns.push(["growth","升级"]);
-  if (breakdown.some(row=>row.adjustment)) columns.push(["adjustment","其他修正"]);
-  columns.push(["total","总值"]);
-  if (attributes.some(([name]) => (unit.effectiveAttributes[name] ?? unit.attributes[name]) !== unit.attributes[name])) {
-    columns.push(["effective","生效"]);
-  }
+  const {columns,rows} = characterAttributeSheet(unit);
+  const valueColumn = ({emphasis}) => emphasis ? " data-value-column" : "";
   $("unit-view").innerHTML = '<table class="attribute-sources"><thead><tr><th scope="col">属性</th>' +
-    columns.map(([,label])=>'<th scope="col">' + label + '</th>').join("") + '</tr></thead><tbody>' +
-    attributes.map(([name,label])=>{
-      const raw = unit.attributes[name];
-      const values = {
-        growth:unit.levelPoints?.[name], ...unit.attributeSources?.[name],
-        total:raw, effective:unit.effectiveAttributes[name] ?? raw,
-      };
-      return '<tr><th scope="row">' + label + '</th>' + columns.map(([key]) => {
-        const value = values[key];
-        const signed = key !== "base" && key !== "initial" && key !== "total" && key !== "effective";
-        return '<td>' + (signed && value > 0 ? "+" : "") + text(value ?? "—") + '</td>';
-      }).join("") + '</tr>';
-    }).join("") + '</tbody></table>';
+    columns.map(column=>'<th scope="col"' + valueColumn(column) + '>' + column.label + '</th>').join("") +
+    '</tr></thead><tbody>' + rows.map(({label,cells,rank})=>'<tr><th scope="row">' + label + '</th>' +
+      cells.map((cell,index)=>'<td' + valueColumn(columns[index]) + '>' + text(cell) +
+        (columns[index].key === "total" && rank ? '<span class="attribute-rank" role="img" aria-label="' +
+          (rank === 1 ? '最高属性">★' : '次高属性">☆') + '</span>' : '') + '</td>').join("") +
+      '</tr>').join("") + '</tbody></table>';
 }
 
 function showEquipment(unit) {
-  const weapon = unit.weapon;
-  const armorPieces = [
-    ["头盔",unit.armor.head,true],
-    ["护甲",unit.armor.body,true],
-    ...(unit.shield ? [["盾牌",unit.shield,false]] : []),
-  ];
-  const wearables = unit.additionalGear.filter(item => item.slot !== "off_hand" || !unit.shield);
-  const cells = (values) => values.map(value => '<td>' + text(value ?? "—") + '</td>').join("");
-  const identityColumns = '<colgroup><col class="equipment-slot"><col class="equipment-name"></colgroup>';
-  const identityHeaders = '<th scope="col">部位</th><th scope="col">名称</th>';
-  const reduction = (durability) => armorPenetrationReduction(durability) + "%";
-  const armorRows = armorPieces.map(([label,part,reducesPenetration]) => {
-    const equipped = part.name !== "无";
-    const stats = equipped ? [
-      part.max, reducesPenetration ? reduction(part.max) : undefined,
-      part.current, reducesPenetration ? reduction(part.current) : undefined,
-    ] : [undefined,undefined,undefined,undefined];
-    return '<tr><th scope="row">' + text(label) + '</th><td>' +
-      text(equipped ? part.name : "未装备") + '</td>' + cells(stats) + '</tr>';
-  }).join("");
-  $("unit-view").innerHTML =
-    '<table class="unit-equipment equipment-weapon" aria-label="武器">' + identityColumns +
-    '<colgroup class="equipment-panel" span="6"></colgroup><colgroup class="equipment-actual"></colgroup>' +
-    '<thead><tr>' + identityHeaders + '<th scope="col">伤害</th><th scope="col">穿甲</th>' +
-    '<th scope="col">破甲</th><th scope="col">爆头</th><th scope="col">距离</th>' +
-    '<th scope="col">反大</th><th scope="col" class="equipment-current">实际伤害</th></tr></thead>' +
-    '<tbody><tr><th scope="row">武器</th><td>' + text(weapon.name) + '</td>' +
-    cells([weapon.damage,Math.round((weapon.penetration ?? 0)*100) + "%",
-      signedPercent(Math.round(weapon.armorBonus*100)),signedPercent(Math.round(weapon.headBonus*100)),
-      weapon.range,Math.round((weapon.largeBonus ?? 0)*100) + "%",unit.damage]) + '</tr></tbody></table>' +
-    '<table class="unit-equipment equipment-armor" aria-label="护甲与其他装备">' + identityColumns +
-    '<colgroup class="equipment-panel" span="2"></colgroup><colgroup class="equipment-actual" span="2"></colgroup>' +
-    '<thead><tr>' + identityHeaders + '<th scope="col">耐久</th><th scope="col">减穿</th>' +
-    '<th scope="col" class="equipment-current">当前耐久</th><th scope="col" class="equipment-current">当前减穿</th>' +
-    '</tr></thead><tbody>' + armorRows + '</tbody></table>' +
-    (wearables.length ? '<table class="unit-equipment equipment-wear" aria-label="服装">' + identityColumns +
-      '<thead><tr>' + identityHeaders + '</tr></thead><tbody>' +
-      wearables.map(item => '<tr><th scope="row">服装</th>' + cells([item.name]) + '</tr>').join("") +
-      '</tbody></table>' : "");
+  const view = $("unit-view");
+  let host = view.querySelector(".battle-equipment-host");
+  if (!host) {
+    host = document.createElement("div");
+    host.className = "battle-equipment-host";
+    view.replaceChildren(host);
+  }
+  function latest() {
+    const context = battleSession.equipment(unit.id);
+    if (!context) return null;
+    return {
+      ...context, host, latest,
+      swaps:canAct(byId(unit.id)) ? battleItemsBySlot(context.unit.items).map(item=>item?.swap?.gear ? battleSwapProblem(context.unit,item) : null) : [],
+      swap(slot) {
+        const actor = byId(unit.id);
+        if (!canAct(actor) || battleSwapProblem(actor,battleItemsBySlot(actor.items)[slot])) return;
+        $("unit-dialog").close();
+        send({type:"swapItem",actor:unit.id,slot});
+      },
+      apply(gear) {
+        const next = battleSession.changeEquipment(unit.id,context.revision,battleParticipantGear(gear));
+        queueMicrotask(()=>receive(next));
+      },
+    };
+  }
+  document.dispatchEvent(new CustomEvent("battle-equipment-panel",{detail:latest()}));
+  if (!host.shadowRoot) host.textContent = "请从游戏内进入战场，打开共用装备面板。";
+  view.querySelector(".battle-potions")?.remove();
+  host.insertAdjacentHTML("afterend",equipmentPotions(unit));
+}
+
+function hideEquipment() {
+  if ($("unit-view").querySelector(".battle-equipment-host")) {
+    document.dispatchEvent(new CustomEvent("battle-equipment-panel"));
+  }
 }
 
 function showDialogue(unit) {
@@ -748,20 +781,13 @@ function showMount({mount}) {
   ],"unit-mount-terrain") : "");
 }
 
-const kilos = new Intl.NumberFormat("zh-CN",{maximumFractionDigits:3});
-const weightLabel = value => kilos.format(value) + " 千克";
+function carriedIcon(item, fallback) {
+  if (item?.iconSrc) return '<img class="battle-item-icon" src="' + text(item.iconSrc) + '" alt="">';
+  const emoji = item?.iconEmoji ?? fallback;
+  return emoji ? '<span class="battle-item-icon" aria-hidden="true">' + text(emoji) + '</span>' : "";
+}
 
-function showItems(unit) {
-  const {maximum,equipped,items,remaining} = unit.load;
-  const carried = battleItemsBySlot(unit.items);
-  const slots = battleItemLabels.map((label,index)=>[label,carried[index]?.name ?? "空"]);
-  const swaps = canAct(unit) ? carried.map((item,index)=>{
-    if (!item?.swap?.gear) return "";
-    const problem = battleSwapProblem(unit,item);
-    return '<div class="use-potion swap-item"><span>' + text(battleItemLabels[index] + " · " + item.name) +
-      (problem ? '<small>' + text(problem) + '</small>' : '') + '</span><button type="button" data-swap-item="' +
-      index + '"' + (problem ? ' disabled' : '') + '>换上</button></div>';
-  }).join("") : "";
+function equipmentPotions(unit) {
   const potions = canAct(unit) ? unit.items.filter(item=>item.restore).map(item=>{
     const {resource,dice,icon} = item.restore;
     const targets = restorationTargets(state,unit,item);
@@ -773,17 +799,14 @@ function showItems(unit) {
     }).join("");
     const name = item.name + " ×" + item.qty;
     return '<form class="use-potion" data-use-potion="' + text(item.key ?? item.name) + '">' +
-      '<span><span aria-hidden="true">' + text(icon ?? "🧪") + '</span> ' + text(name) +
+      '<span>' + carriedIcon(item,icon ?? "🧪") + text(name) +
       '<small>恢复 ' + text(dice) + ' 点' + label + '</small></span>' +
       '<select name="recipient" aria-label="' + text(item.name + "使用对象") + '"' +
       (targets.length ? '' : ' disabled') + '>' + (options || '<option>无可用对象</option>') + '</select>' +
       '<button type="submit"' + (targets.length ? '' : ' disabled') + '>使用</button></form>';
   }).join("") : "";
-  $("unit-view").innerHTML = '<div class="unit-items-view">' + unitFacts([
-    ["最大负重",weightLabel(maximum)],["装备负重",weightLabel(equipped)],
-    ["物品负重",weightLabel(items)],["剩余负重",weightLabel(remaining)],
-  ],"unit-carried") + unitFacts(slots,"unit-carried") +
-    (potions || swaps ? '<div class="battle-potions">' + potions + swaps + '<small>使用道具或换上备用装备都会结束本轮行动。</small></div>' : '') + '</div>';
+  return potions ? '<div class="battle-potions" aria-label="使用随身道具">' + potions +
+    '<small>使用道具会结束本轮行动。</small></div>' : "";
 }
 
 function updateUnitDetails() {
@@ -805,6 +828,8 @@ function updateUnitDetails() {
     tab.tabIndex = active ? 0 : -1;
     if (active) $("unit-view").setAttribute("aria-labelledby",tab.id);
   }
+  if (inspectedTab !== "equipment") hideEquipment();
+  if (inspectedTab !== "profile" && frontier) document.dispatchEvent(new CustomEvent("battle-profile-panel"));
   if (inspectedTab === "profile") {
     showProfile(unit);
   } else if (inspectedTab === "attributes") {
@@ -817,8 +842,6 @@ function updateUnitDetails() {
     showEquipment(unit);
   } else if (inspectedTab === "mount") {
     showMount(unit);
-  } else {
-    showItems(unit);
   }
 }
 
@@ -834,8 +857,10 @@ function showUnitDetails(id, tab = "profile") {
 
 function renderLog() {
   const now = Date.now();
-  const entries = state.log.filter(entry=>entry.at<=now).sort((a,b)=>a.at-b.at || a.id-b.id);
-  const version = state.match + ":" + (entries.at(-1)?.id ?? 0) + ":" + entries.length;
+  const entries = state.log.filter(entry=>entry.at<=now &&
+    (moraleLogEnabled || entry.kind !== "morale" || !entry.text.includes("，士气 ")))
+    .sort((a,b)=>a.at-b.at || a.id-b.id);
+  const version = state.match + ":" + (entries.at(-1)?.id ?? 0) + ":" + (entries.length || state.phase);
   if (version === logVersion) return;
   const log = $("log");
   const sameMatch = logVersion?.startsWith(state.match + ":");
@@ -846,19 +871,26 @@ function renderLog() {
   const openedAttack = detailAnchor?.dataset.attack;
   log.innerHTML = entries.length ? entries.map((event) => {
     const {detail} = event;
+    const participants = [detail?.actorId,detail?.targetId];
+    const stance = stanceActions[event.kind];
+    if (stance && detail?.actor) {
+      return '<li class="stance-log">' + logLabels.format(detail.actor,participants) +
+        '开始“<span class="log-action ' + event.kind + '">' + stance + '</span>”。</li>';
+    }
     const actionType = event.kind === "skill" ? "技能" : event.kind === "item" ? "道具" : "";
     const summary = actionType && detail?.accuracy && detail.actor && detail.name ?
       detail.actor + (detail.target ? "对" + detail.target : "") + "使用了" + actionType + "「" + detail.name + "」" : event.text;
     if ((event.kind === "strike" || actionType) && detail?.accuracy) {
       const hit = detail.hit !== false;
       return '<li class="attack-log ' + (hit ? "hit" : "miss") + '">' +
-        '<div class="attack-record"><span>' + text(summary) + '，</span>' +
+        '<div class="attack-record"><span>' + logLabels.format(summary,participants) + '，</span>' +
         '<button type="button" class="attack-result" data-attack="' + event.id + '" aria-controls="attack-details" aria-expanded="false">' +
         strikeLabel(detail) + '</button>' + (hit ? '！' : '。') + '</div></li>';
     }
     return '<li class="' + (event.kind === "speech" ? "speech-log" : event.kind) + '">' +
-      (event.speaker ? '<b>' + text(event.speaker) + '</b>　' : "") + text(summary) + (summary !== event.text ? "。" : "") + '</li>';
-  }).join("") : '<li>布阵完成后开始战斗。</li>';
+      (event.speaker ? '<b>' + logLabels.format(event.speaker,participants) + '</b>　' : "") +
+      logLabels.format(summary,participants) + (summary !== event.text ? "。" : "") + '</li>';
+  }).join("") : state.phase === "setup" ? '<li>布阵完成后开始战斗。</li>' : "";
   log.scrollTop = follow ? log.scrollHeight : scrollTop;
   if (openedAttack) {
     const anchor = log.querySelector('[data-attack="' + openedAttack + '"]');
@@ -1108,7 +1140,20 @@ function closeReachDetails() {
   reachAnchor = reachPoint = null;
 }
 
+function refreshAimedEnemy() {
+  for (const entry of $("turn-order").children) {
+    entry.classList.toggle("aim-target",entry.dataset.turnUnit === aimedEnemy);
+  }
+}
+
+function setAimedEnemy(id) {
+  if (aimedEnemy === id) return;
+  aimedEnemy = id;
+  refreshAimedEnemy();
+}
+
 function showReachDetails(anchor,point) {
+  setAimedEnemy(anchor.dataset.card);
   reachAnchor = anchor;
   reachPoint = point;
   const panel = $("reach-details");
@@ -1344,10 +1389,11 @@ function renderActionOrder() {
   orderVersion = version;
   $("turn-order").innerHTML = actors.map((unit,index)=>{
     const current = playing && index === 0;
-    return '<li class="' + unit.side + (current ? ' current" aria-current="step' : "") + '" title="' +
-      text(unit.name + " · 先攻 " + unit.initiative) + '">' + portraitImage(unit) +
+    return '<li class="' + unit.side + (current ? ' current" aria-current="step' : "") + '" data-turn-unit="' + text(unit.id) + '" title="' +
+      text(unit.name + " · 先攻 " + unit.initiative) + '"><span class="turn-avatar">' + cardPortrait(unit) + '</span>' +
       '<span>' + text(unit.name) + '</span></li>';
   }).join("");
+  refreshAimedEnemy();
 }
 
 function cardPoint(id) {
@@ -1435,6 +1481,7 @@ function showCasualty({left,top,width,height,card},hit) {
 function showStrike(hit,departedPoint) {
   const target = cardPoint(hit.target) ?? departedPoint;
   if (!target) return;
+  blood.show(target,hit.hpLoss,bloodAppearanceDelay);
   const missed = hit.hit === false;
   if (departedPoint) showCasualty(departedPoint,hit);
   else if (!missed) target.card.classList.add("impact");
@@ -1533,12 +1580,15 @@ function onUnit(id) {
       return;
     }
     aiming = false;
+    setAimedEnemy();
+    closeReachDetails();
     return send({type:"attack",actor:selected,target:id});
   }
   if (state.phase === "reinforcement" && state.reinforcements.units.includes(id)) {
     reinforcementUnit = reinforcementUnit === id ? null : id;
     return render();
   }
+  if (id === state.order[0] && canAct(unit)) return toggleActionMenu(id);
   if (state.phase !== "setup") return showUnitDetails(id);
   selected = id;
   aiming = false;
@@ -1550,6 +1600,7 @@ function onUnit(id) {
 
 document.addEventListener("click",(event) => {
   const button = event.target.closest("button");
+  if (actionMenuActor && !event.target.closest("#unit-actions,[aria-controls='unit-actions']")) toggleActionMenu();
   if (button?.dataset.attack) {
     showAttackDetails(button);
     if (event.detail === 0) $("attack-details").querySelector('button[data-roll-section="hit"]')?.focus();
@@ -1559,7 +1610,7 @@ document.addEventListener("click",(event) => {
   closeAttackDetails();
   if (!button || !state) return;
   if (frontier && state.phase === "setup" && button.hasAttribute("data-prepare-encounter")) {
-    window.parent.postMessage({type:"campfire-battle-prepare",battleId,side:button.dataset.prepareEncounter},window.location.origin);
+    window.parent.postMessage({type:"campfire-battle-prepare",battleId},window.location.origin);
     return;
   }
   if (frontier && button.id === "postbattle-reset") {
@@ -1593,6 +1644,11 @@ document.addEventListener("click",(event) => {
     return send({type:"settle",command:button.dataset.settlementCommand,target:settlementSelection});
   }
   if (button.dataset.details) return showUnitDetails(button.dataset.details);
+  if (button.hasAttribute("data-current-details") && actionMenuActor) {
+    const unitId = actionMenuActor;
+    toggleActionMenu();
+    return showUnitDetails(unitId);
+  }
   if (button.dataset.unitTab) {
     inspectedTab = button.dataset.unitTab;
     $("unit-view").scrollTop = 0;
@@ -1614,7 +1670,7 @@ document.addEventListener("click",(event) => {
   if (button.hasAttribute("data-reset")) return send({type:"reset"});
   if (button.hasAttribute("data-retreat") && canAct(byId(selected))) return send({type:"retreat",actor:selected});
   if (button.hasAttribute("data-skill")) return setNotice(byId(selected).name + "暂无可用技能。");
-  if (button.hasAttribute("data-items")) return showUnitDetails(selected,"items");
+  if (button.hasAttribute("data-items")) return showUnitDetails(selected,"equipment");
   if ((button.hasAttribute("data-defend") || button.hasAttribute("data-dodge")) && canAct(byId(selected))) {
     aiming = false;
     moving = false;
@@ -1634,9 +1690,9 @@ document.addEventListener("click",(event) => {
   }
 });
 $("board").addEventListener("pointermove",(event) => {
-  pointer = {x:event.clientX,y:event.clientY,target:event.target.closest("[data-unit]")?.dataset.unit};
-  drawArrow();
   const card = event.target.closest(".out-of-range,.target");
+  pointer = {x:event.clientX,y:event.clientY,target:card?.dataset.card ?? event.target.closest("[data-unit]")?.dataset.unit};
+  drawArrow();
   if (card) showReachDetails(card,pointer);
 });
 $("board").addEventListener("pointerleave",() => { pointer = null; drawArrow(); });
@@ -1650,6 +1706,8 @@ $("ranks").addEventListener("animationend",event => {
 });
 $("terrain").addEventListener("change",(event) => send({type:"terrain",terrain:event.target.value}));
 $("unit-dialog").addEventListener("close",() => {
+  hideEquipment();
+  if (frontier) document.dispatchEvent(new CustomEvent("battle-profile-panel"));
   $("unit-stat-details").hidden = true;
   const fallback = () => document.querySelector('[data-details="' + inspectedUnit + '"],[data-card="' +
     inspectedUnit + '"] .card-select');
@@ -1657,13 +1715,13 @@ $("unit-dialog").addEventListener("close",() => {
 });
 for (const type of ["pointerover","focusin"]) {
   $("unit-view").addEventListener(type,event=>{
-    const anchor = event.target.closest("[data-unit-stat]");
+    const anchor = event.composedPath().find(node=>node.matches?.("[data-unit-stat]"));
     if (anchor) showUnitStatDetails(anchor);
   });
 }
 for (const type of ["pointerout","focusout"]) {
   $("unit-view").addEventListener(type,event=>{
-    const anchor = event.target.closest("[data-unit-stat]");
+    const anchor = event.composedPath().find(node=>node.matches?.("[data-unit-stat]"));
     if (anchor && !anchor.contains(event.relatedTarget)) $("unit-stat-details").hidden = true;
   });
 }
@@ -1682,13 +1740,9 @@ $("unit-view").addEventListener("submit",event => {
 $("unit-view").addEventListener("click",event => {
   const unit = byId(inspectedUnit);
   if (unit && event.target.closest("button[data-portrait-view]")) {
-    void portraitViewer.open(unit,portraitSource(unit,portraitPath(unit)));
+    void portraitViewer.open(unit,unitPortraitSource(unit));
     return;
   }
-  const button = event.target.closest("button[data-swap-item]");
-  if (!button || !canAct(unit)) return;
-  $("unit-dialog").close();
-  send({type:"swapItem",actor:unit.id,slot:Number(button.dataset.swapItem)});
 });
 $("unit-dialog").querySelector('[role="tablist"]').addEventListener("keydown",(event) => {
   if (!["ArrowLeft","ArrowRight","Home","End"].includes(event.key)) return;
@@ -1739,6 +1793,16 @@ for (const type of ["pointerout","focusout"]) {
 }
 document.addEventListener("keydown",(event) => {
   if (event.key === "Escape" && !$("unit-dialog").open) {
+    if (battleOptions.open) {
+      battleOptions.open = false;
+      battleOptions.querySelector("summary").focus();
+      return;
+    }
+    if (actionMenuActor && !aiming && !moving) {
+      toggleActionMenu();
+      $("ranks").querySelector('[aria-controls="unit-actions"]')?.focus();
+      return;
+    }
     if (settlementSelection && !$("spoils-layout").hidden && !$("leave-dialog").open) {
       settlementSelection = null;
       return renderVictory();
@@ -1778,9 +1842,17 @@ if (frontier) window.addEventListener("message",function loadEncounter(event) {
       event.data?.type !== "campfire-battle" || !event.data.player) return;
   window.removeEventListener("message",loadEncounter);
   battleId = event.data.battleId;
+  partyIds = new Set(["pc",...(event.data.partyMemberIds ?? []).map(id=>"ally-" + encodeURIComponent(id))]);
   formationKey = event.data.formationKey;
   const lighting = event.data.lighting;
   if (lighting === "lit" || lighting === "unlit") document.body.dataset.lighting = lighting;
   sync();
+});
+if (frontier) window.addEventListener("message",event=>{
+  if (event.origin !== location.origin || event.source !== window.parent ||
+      event.data?.type !== "campfire-battle-portraits" || event.data.battleId !== battleId || !state) return;
+  portraitUpdates = event.data.portraits;
+  orderVersion = undefined;
+  render();
 });
 else sync();
