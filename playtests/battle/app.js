@@ -1,11 +1,12 @@
+import { moraleLabel, renderUnitCardContent, renderUnitMeter, unitCardLevel, whiteFlag } from "./unitCard.mjs";
 import { battleParticipantGear, battleSession } from "./client.mjs?v=battle-help";
-import { weatherParticles } from "../weatherVisual.mjs";
-import { battleSwapProblem, dodgeAfterAction, restorationTargets, battleProfileCombat } from "./battle.mjs";
+import { weatherParticles, weatherSkyMarkup } from "../weatherVisual.mjs";
+import { battleSwapProblem, dodgeAfterAction, restorationTargets, battleProfileCombat, pendingCorpseAction, settlementItemKey, settlementProblem } from "./battle.mjs";
 import { fieldSideOf } from "./grid.mjs";
 import { battleItemsBySlot } from "./loadout.mjs";
-import { createOpeningScreen } from "./opening.mjs";
+import { createOpeningScreen } from "./opening.mjs?v=encounter-actions";
 import { createPortraitViewer, headshotCrop, portraitBackground, portraitSource } from "./portraits.mjs";
-import { battleFaction, createBattleLogLabels } from "./battleLog.mjs";
+import { battleFaction, createBattleLogLabels, strikeLabel, strikeLabels } from "./battleLog.mjs";
 import { createBloodEffects } from "./blood.mjs";
 import { characterAttributeSheet, renderCharacterProfileData } from "./characterSheet.mjs";
 
@@ -16,23 +17,15 @@ const $ = (id) => document.getElementById(id);
 const colors = {gold:"#ffe0a0", dull:"#baa48a", hostile:"#ff947d"};
 const names = {front:"前排",back:"后排",reserve:"预备队"};
 const turnLabels = {player:"我方行动",ally:"盟友行动",enemy:"敌方行动"};
-const professionIcons = {
-  战士:"⚔️",野蛮人:"🪓",武僧:"👊",游侠:"🏹",盗贼:"🗡️",圣骑士:"🛡️",牧师:"✝️",德鲁伊:"🌿",
-  吟游诗人:"🎶",法师:"🪄",术士:"✨",契约术士:"📜",农夫:"🌾",牧人:"🐑",渔人:"🎣",采集人:"🧺",
-  锻造师:"⚒️",木匠:"🪚",裁缝:"🪡",皮匠:"🧵",珠宝匠:"💎",炼金术士:"⚗️",医师:"🩹",厨师:"🍳",
-  行旅向导:"🧭",行商:"💰",学士:"📚",观光客:"🎒",骑兵:"🐎",步兵:"🗡️",弩手:"🏹",斧手:"🪓",
-};
 const embedded = window.parent !== window;
 const frontier = embedded && new URLSearchParams(location.search).get("mode") === "frontier";
 document.body.classList.toggle("embedded",embedded);
 $("reset-battle").hidden = frontier;
 $("battle-layout").hidden = frontier;
-const strikeLabels = {hit:"命中",miss:"失手",dodge:"闪避",block:"格挡"};
 const eventLabels = {
   ready:"进攻前",hit:"命中",miss:strikeLabels.miss,light:"轻伤",heavy:"重伤",allyFall:"队友阵亡",fall:"阵亡",
   guard:"防御",shieldBreak:"盾牌破碎",dismount:"坠马",
 };
-const strikeLabel = ({outcome,hit}) => strikeLabels[outcome] ?? (hit === false ? strikeLabels.miss : strikeLabels.hit);
 let state;
 let battleId;
 let partyIds = frontier ? new Set(["pc"]) : undefined;
@@ -108,13 +101,11 @@ function cardPortrait(unit) {
     ';background-size:' + size.map(value=>value+"%").join(" ") +
     ';background-position:' + position.map(value=>value+"%").join(" ") + '"></span>';
 }
-const whiteFlag = -4;
-const battleStatusNames = {defend:"防御",dodge:"闪避"};
-const moraleLabel = (level) => level === whiteFlag ? "白旗，跳过行动" : level === 0 ? "普通" : (level > 0 ? "+" : "−") + Math.abs(level);
+const battleStatusNames = {defend:"防御",dodge:"闪避",surprised:"措手不及"};
 const rowUnits = (side,row) => state.units.filter(unit=>fieldSideOf(unit) === side && unit.row === row).sort((a,b) => a.position-b.position);
 const gridColumn = (column) => state.lanes.indexOf(column) + 1;
 const canAct = (unit) => unit?.side === "player" && unit.morale !== whiteFlag && unit.row !== "reserve" && !unit.acted &&
-  state.phase === "player" && !state.busy && state.order?.[0] === unit.id;
+  state.phase === "player" && !state.autoBattle && !state.busy && state.order?.[0] === unit.id;
 const targetValid = (unit, target) => canAct(unit) && state.attackTargets?.[unit.id]?.includes(target.id);
 const reachReason = () => state.attackBlocked?.[selected] || "目标不在攻击范围内。";
 
@@ -211,7 +202,7 @@ function playBattleSound(name,delay=0,volume=1) {
     recording.next = recording.random?index:(index+1)%recording.buffers.length;
     sample.playbackRate.value = recording.random?1:.985 + Math.random()*.03;
     const gain = audioContext.createGain();
-    gain.gain.value = (recordedLevels[name] ?? 1)*volume;
+    gain.gain.value = (recordedLevels[name] ?? selectedBattleRecordings[name]?.volume ?? 1)*volume;
     sample.connect(gain).connect(audioOutput);
     sample.start(audioContext.currentTime+delay,recording.offsets?.[index]??recording.offset??0);
     return;
@@ -307,7 +298,16 @@ async function send(payload) {
   sending = true;
   setNotice();
   try {
-    receive(battleSession.submit(payload));
+    const previousHarvest = state?.settlement?.lastHarvest;
+    const next = battleSession.submit(payload);
+    if (next.settlement?.lastHarvest && next.settlement.lastHarvest !== previousHarvest) {
+      settlementItemTab = "loot";
+      settlementFilters.loot = "all";
+    }
+    receive(next);
+    if (frontier && payload.type === "settle" && payload.command === "leave" && state.settlement?.left) {
+      reportFrontierResult();
+    }
     if (["move","retreat","reinforce"].includes(payload.type)) {
       playBattleSound("step");
       playBattleSound("step",.15);
@@ -338,12 +338,13 @@ function receive(next) {
   }
   const strike = next.lastStrike;
   const freshStrike = previous?.match === next.match && strike && strike.id !== lastStrike && Date.now() - strike.at < 2100;
-  const fallen = freshStrike && !next.units.some(unit=>unit.id===strike.target);
+  const departed = freshStrike && !next.units.some(unit=>unit.id===strike.target);
+  const fallen = departed && !strike.arenaWithdrawn;
   const strikeSounds = freshStrike ? selectedStrikeFeedback(strike,
     previous.units.find(unit=>unit.id===strike.actor)?.weapon,
     previous.units.find(unit=>unit.id===strike.target),fallen) : [];
   const afterStrike = strikeSounds.length ? Math.max(...strikeSounds.map(cue=>cue.delay))+.12 : 0;
-  const departedPoint = fallen ? cardPoint(strike.target) : null;
+  const departedPoint = departed ? cardPoint(strike.target) : null;
   if (previous && next.match !== previous.match) {
     selected = "roland";
     aiming = false;
@@ -353,6 +354,8 @@ function receive(next) {
     clearTimeout(victoryTimer);
     settlementSelection = null;
     if ($("leave-dialog").open) $("leave-dialog").close();
+    if ($("battle-record-dialog").open) $("battle-record-dialog").close();
+    if ($("harvest-checks-dialog").open) $("harvest-checks-dialog").close();
     $("victory-screen").hidden = true;
     $("battle-layout").hidden = false;
     $("effects").replaceChildren();
@@ -373,7 +376,8 @@ function receive(next) {
   if (byId(selected)?.moved) moving = false;
   if (frontier && previous?.phase === "setup" && state.phase === "ended") {
     reportToolbar();
-    return reportFrontierResult();
+    if (state.endReason === "withdrawal") return reportFrontierResult();
+    return openAftermath();
   }
   render();
   const moraleChanged = showMoraleChanges(previous);
@@ -384,9 +388,9 @@ function receive(next) {
     if (previous) {
       playBattleSound(state.winner === "player" ? "victory" : "defeat",freshStrike ? Math.max(.54,afterStrike) : 0);
       const delay = freshStrike && strike.hpLoss > 0 ? meterLossDuration : 850;
-      victoryTimer = setTimeout(openBattleReport,moraleChanged ? 2100 : delay);
+      victoryTimer = setTimeout(openAftermath,moraleChanged ? 2100 : delay);
     }
-    else openBattleReport();
+    else openAftermath();
   } else if (state.phase === "setup") {
     showBattleBanner("");
   } else if (previous?.phase === "setup" || previous?.round !== state.round) {
@@ -417,51 +421,32 @@ function meterLoss(owner,kind,current,max) {
     'ms;animation-delay:-' + elapsed + 'ms"></span>';
 }
 
-function meter(kind, label, current, max, status="", owner) {
-  const trail = meterLoss(owner,kind,current,max);
-  if (kind === "mount" && current === 0 && !trail) return "";
-  return '<span class="meter ' + kind + '" data-empty="' + (current === 0) +
-    '" aria-label="' + label + ' ' + current + '／' + max + (status ? '，' + status : '') + '"><i>' + label +
-    '</i><b><s style="width:' + (max ? 100 * current/max : 0) + '%"></s>' + trail + '</b><em>' + current + '</em>' +
-    (status ? '<span class="meter-status">' + status + '</span>' : '') + '</span>';
+function meter(kind, label, current, max, owner) {
+  return renderUnitMeter(kind,label,current,max,meterLoss(owner,kind,current,max));
 }
 
 function renderCard(unit,column,entry,preview=false,formationSlot) {
   const inBattle = column !== undefined;
   const fighting = inBattle && state.phase !== "setup";
+  const fieldCard = fighting || Boolean(entry);
   const current = fighting && (state.phase === "player" || state.phase === "enemy") && unit.id === state.order[0];
   const canOpenActions = current && canAct(unit);
   const faction = current ? battleFaction(unit,partyIds) : undefined;
   const target = inBattle && aiming && targetValid(byId(selected),unit);
   const blocked = inBattle && aiming && unit.side === "enemy" && !target;
   const highlighted = !preview && unit.id === (inBattle ? (state.phase === "setup" ? selected : state.order[0]) : settlementSelection);
-  const classes = ["card",unit.side];
-  if (fighting || formationSlot) classes.push("battle-card");
+  const classes = ["card","campfire-unit-card",unit.side];
+  if (fieldCard || formationSlot) classes.push("battle-card");
   if (highlighted) classes.push("selected");
   if (target) classes.push("target");
   if (blocked) classes.push("out-of-range");
-  const lootStatus = entry?.kind === "corpse" ? (entry.looted ? "已搜刮" : "未搜刮") : "";
-  const treatmentStatus = entry?.disposition ? "已" + settlementLabels[entry.disposition] : "";
   const statuses = fighting && state.phase !== "ended" ? Object.entries(unit.statuses) : [];
-  const badges = statuses.map(([id,turns])=>({name:battleStatusNames[id],turns}));
+  const badges = statuses.map(([id,turns])=>({id,name:battleStatusNames[id],turns}));
   const describeBadge = ({name,turns}) => name + "，剩余 " + turns + " 回合";
-  const description = [lootStatus,treatmentStatus,...badges.map(describeBadge)].filter(Boolean).join("，");
+  const description = badges.map(describeBadge).join("，");
   if (statuses.some(([id])=>id==="defend")) classes.push("guarding");
   if (statuses.some(([id])=>id==="dodge")) classes.push("evading");
-  const morale = unit.morale;
-  const tone = morale === whiteFlag ? "routed" : morale > 0 ? "raised" : morale < 0 ? "shaken" : "steady";
-  const marker = morale === whiteFlag ? "🏳️" : '<i class="morale-eagle" aria-hidden="true"></i>'.repeat(Math.max(1,Math.abs(morale)));
-  const profession = unit.profession || unit.role || "职业未定";
-  const level = Math.min(10,Math.max(1,Math.trunc(Number(unit.level) || 1)));
-  const levelLabel = level + " 级";
-  const cardMeter = (kind,label,part,tag) => meter(kind,label,part.current,part.max,tag,inBattle ? unit.id : undefined);
-  const gearResource = (unit.mount ? cardMeter("mount","骑",unit.mount) : "") ||
-    (unit.shield ? cardMeter("shield","盾",unit.shield) : "");
-  const energy = unit.magic ? cardMeter("magic","魔",unit.magic) :
-    inBattle ? cardMeter("stamina","耐",unit.stamina ?? {current:0,max:0}) : "";
-  const resources = cardMeter("head","盔",unit.armor.head) + cardMeter("body","甲",unit.armor.body,lootStatus) +
-    cardMeter("hp","血",{current:unit.hp,max:unit.maxHp},treatmentStatus) +
-    (inBattle ? energy + gearResource : gearResource || energy);
+  const levelLabel = unitCardLevel(unit) + " 级";
   const placement = formationSlot ? "" : inBattle ? ' data-card="' + unit.id + '" style="grid-column:' + column + '"' :
     (preview ? ' data-encounter-unit="' : ' data-spoils-card="') + unit.id + '"';
   const details = 'data-details="' + unit.id + '" aria-haspopup="dialog"';
@@ -471,28 +456,27 @@ function renderCard(unit,column,entry,preview=false,formationSlot) {
     preview ? details : inBattle ? 'data-unit="' + unit.id + '"' : 'data-settlement-entry="' + unit.id + '"';
   const menu = inBattle ? details + ' title="人物详情"' :
     selection + ' title="结算操作"';
-  const menuButton = fighting || preview ? "" : '<button type="button" class="unit-menu" ' + menu + ' aria-label="' +
+  const menuButton = fieldCard || preview ? "" : '<button type="button" class="unit-menu" ' + menu + ' aria-label="' +
     text(unit.name + (inBattle ? "详情" : "结算操作")) + '"><i></i><i></i><i></i></button>';
   return '<div class="' + classes.join(" ") + '"' + placement + '>' +
     '<button type="button" class="card-select" ' + selection + ' aria-label="' +
     text((formationSlot ? formationSlot.label + " · " : "") + unit.name + " · " + levelLabel) + '"' +
     (preview && !formationSlot ? '' : ' aria-pressed="' + highlighted + '"') +
     (canOpenActions ? ' aria-controls="unit-actions" aria-expanded="' + (actionMenuActor === unit.id) + '"' : "") +
+    (entry ? ' aria-controls="victory-actions" aria-expanded="' + highlighted + '"' : "") +
     (description ? ' aria-description="' + text(description) + '"' : '') +
     (blocked || target ? ' aria-describedby="reach-details"' : "") + '>' +
-    '<span class="card-portrait">' + cardPortrait(unit) +
-    (badges.length ? '<span class="portrait-statuses">' + badges.map(badge=>
-      '<span class="portrait-status" title="' + text(describeBadge(badge)) + '">' +
-      text(badge.name) + '<b>' + badge.turns + '</b></span>').join("") + '</span>' : "") +
-    '</span><span class="card-data"><strong>' + text(unit.name) + '</strong>' + resources +
-    '</span>' +
-    '<span class="morale-mark ' + tone + '" role="img" aria-label="士气 ' + moraleLabel(morale) +
-    '" title="士气 ' + moraleLabel(morale) + '">' + marker + '</span>' +
-    '<span class="level-mark" data-level="' + level + '" role="img" aria-label="' + levelLabel + '" title="' + levelLabel + '">' + level + '</span>' +
-    '<span class="profession-mark" role="img" aria-label="职业：' + text(profession) + '" title="' + text(profession) + '">' +
-    (Object.hasOwn(professionIcons,profession) ? professionIcons[profession] : "👤") + '</span>' +
-    (faction ? '<span class="turn-marker" data-faction="' + faction + '" aria-hidden="true"><span>▲</span> ' +
-      turnLabels[faction] + '</span>' : "") + '</button>' + menuButton +
+    renderUnitCardContent(unit,{
+      portrait:cardPortrait(unit),
+      badges:badges.length ? '<span class="portrait-statuses">' + badges.map(badge=>
+        '<span class="portrait-status' + (badge.id === "surprised" ? " adverse" : "") + '" title="' + text(describeBadge(badge)) + '">' +
+        text(badge.name) + '<b>' + badge.turns + '</b></span>').join("") + '</span>' : "",
+      field:fieldCard || inBattle,
+      meterTrail:inBattle ? (kind,current,max)=>meterLoss(unit.id,kind,current,max) : undefined,
+      turn:faction ? '<span class="turn-marker" data-faction="' + faction + '" aria-hidden="true"><span>▲</span> ' +
+        turnLabels[faction] + '</span>' : "",
+    }) + '</button>' + menuButton +
+
     (inBattle && unit.acted ? '<span class="card-state">已行动</span>' : "") + '</div>';
 }
 
@@ -601,8 +585,9 @@ function positionCardMenu(menu,anchor,viewport) {
   const gap = 7, width = menu.offsetWidth, height = menu.offsetHeight;
   const edge = document.documentElement.clientWidth-gap;
   let leftEdge = gap, rightEdge = edge;
-  for (const peer of anchor.parentElement.children) {
-    if (peer === anchor || !peer.matches(".card,.slot,.reserve-unit")) continue;
+  const row = anchor.closest(".spoils-card")?.parentElement ?? anchor.parentElement;
+  for (const peer of row.children) {
+    if (peer.contains(anchor) || !peer.matches(".card,.slot,.reserve-unit,.spoils-card")) continue;
     const other = peer.getBoundingClientRect();
     if (other.right <= rect.left) leftEdge = Math.max(leftEdge,other.right);
     if (other.left >= rect.right) rightEdge = Math.min(rightEdge,other.left);
@@ -622,7 +607,7 @@ function renderControls() {
   const setup = state.phase === "setup";
   $("start-battle").hidden = !setup;
   $("restart-battle").hidden = frontier || state.phase !== "ended";
-  $("reinforcement-actions").hidden = state.phase !== "reinforcement";
+  $("reinforcement-actions").hidden = state.phase !== "reinforcement" || Boolean(state.autoBattle);
   if (state.reinforcements) {
     $("reinforcement-hint").textContent = reinforcementUnit ? byId(reinforcementUnit).name + " · 选择我方后排空位" : "回合末补位 · 预备队仅进入我方后排";
     $("finish-reinforcement").textContent = state.units.some(unit=>unit.side === "player" && unit.row !== "reserve")
@@ -634,7 +619,7 @@ function renderControls() {
   const dodge = $("dodge-action");
   const move = $("move-action");
   const retreat = $("retreat-action");
-  const explanation = setup ? "布阵结束后才能行动。" : state.busy ? "正在结算当前行动。" :
+  const explanation = setup ? "布阵结束后才能行动。" : state.autoBattle ? "自动战斗中。" : state.busy ? "正在结算当前行动。" :
     unit?.side === "enemy" ? "敌方角色由系统控制。" : unit?.acted ? "该角色本轮已行动。" : "还没轮到该角色。";
   attack.disabled = defend.disabled = dodge.disabled = !permitted;
   $("unit-actions").querySelector("[data-skill]").disabled = !permitted;
@@ -652,11 +637,6 @@ function renderControls() {
   move.textContent = moving ? "取消移动" : "移动";
   move.setAttribute("aria-pressed",String(moving));
   positionActionMenu();
-}
-
-function unitFacts(rows, modifier = "") {
-  return '<dl class="unit-facts ' + modifier + '">' + rows.map(([label,value,stat,item]) =>
-    '<div' + (stat ? ' data-unit-stat="' + stat + '" tabindex="0" aria-describedby="unit-stat-details"' : "") + '><dt>' + text(label) + '</dt><dd>' + carriedIcon(item) + text(value || "—") + '</dd></div>').join("") + '</dl>';
 }
 
 const fraction = ({current,max}) => current + " / " + max;
@@ -703,6 +683,21 @@ function showProfile(unit) {
       '<button type="button" class="portrait-preview" data-portrait-view aria-label="查看原始立绘">' +
       original + '</button>' : original) + '</div>' +
     '<div class="unit-profile-data">' + renderCharacterProfileData(profile,true) + '</div></div>';
+}
+
+function showMonsterDetails(details, tab) {
+  const view = $("unit-view");
+  if (!details) {
+    view.textContent = "暂无怪物资料";
+    return;
+  }
+  const section = ({title,fields,wide}) => '<section class="monster-facts' + (wide ? ' monster-facts-wide' : '') + '">' +
+    '<h3>' + text(title) + '</h3><dl>' + fields.map(([label,value])=>
+      '<div><dt>' + text(label) + '</dt><dd>' + text(value) + '</dd></div>').join("") + '</dl></section>';
+  const basic = tab === "profile";
+  view.innerHTML = '<div class="monster-detail-sheet">' + (basic ? section({...details.basic,wide:true}) +
+    '<section class="monster-facts monster-facts-wide"><h3>简介</h3><p>' +
+    text(details.description || "暂无简介") + '</p></section>' : details.sections.map(section).join("")) + '</div>';
 }
 
 function showAttributes(unit) {
@@ -766,21 +761,6 @@ function showDialogue(unit) {
   }).join("");
 }
 
-function showMount({mount}) {
-  const {draft} = mount;
-  $("unit-view").innerHTML = unitFacts([
-    ["坐骑",mount.name],["体型",mount.size],
-    ["血量",fraction(mount)],["状态",mount.current > 0 ? "可骑乘" : "已坠马"],
-  ],"unit-mount-stats") + (draft ? '<h3 class="unit-mount-heading">参数草案</h3>' + unitFacts([
-    ["护甲类型",draft.armorType],["披甲",draft.armorName],
-    ["马铠耐久",String(draft.armorDurability)],["闪避修正",signedPercent(draft.dodgeModifier)],
-    ["先攻修正",draft.initiativeModifier > 0 ? "+" + draft.initiativeModifier : String(draft.initiativeModifier)],
-    ["骑乘载货",draft.ridingLoad + " 千克"],["专职驮货",draft.packLoad + " 千克"],
-  ],"unit-mount-stats") + unitFacts([
-    ["擅长地形",draft.favoredTerrains],["受限地形",draft.difficultTerrains],
-  ],"unit-mount-terrain") : "");
-}
-
 function carriedIcon(item, fallback) {
   if (item?.iconSrc) return '<img class="battle-item-icon" src="' + text(item.iconSrc) + '" alt="">';
   const emoji = item?.iconEmoji ?? fallback;
@@ -820,28 +800,35 @@ function updateUnitDetails() {
   const level = $("unit-level");
   level.textContent = unit.level;
   level.title = "等级 " + unit.level;
-  $("unit-mount").disabled = !unit.mount;
-  if (!unit.mount && inspectedTab === "mount") inspectedTab = "profile";
-  for (const tab of $("unit-dialog").querySelectorAll("[data-unit-tab]")) {
-    const active = tab.dataset.unitTab === inspectedTab;
+  const monster = Boolean(unit.monster);
+  const dialog = $("unit-dialog");
+  const tabs = dialog.querySelector('[role="tablist"]');
+  const subject = monster ? "怪物详情" : "人物详情";
+  tabs.classList.toggle("monster-tabs",monster);
+  tabs.setAttribute("aria-label",subject);
+  dialog.querySelector('button[type="submit"]').setAttribute("aria-label","关闭" + subject);
+  if (monster && inspectedTab !== "profile" && inspectedTab !== "attributes") inspectedTab = "profile";
+  for (const tab of tabs.querySelectorAll("[data-unit-tab]")) {
+    const key = tab.dataset.unitTab;
+    tab.hidden = monster && (key === "equipment" || key === "dialogue");
+    if (key === "attributes") tab.textContent = monster ? "怪物属性" : "属性";
+    const active = key === inspectedTab;
     tab.setAttribute("aria-selected",String(active));
     tab.tabIndex = active ? 0 : -1;
     if (active) $("unit-view").setAttribute("aria-labelledby",tab.id);
   }
   if (inspectedTab !== "equipment") hideEquipment();
-  if (inspectedTab !== "profile" && frontier) document.dispatchEvent(new CustomEvent("battle-profile-panel"));
-  if (inspectedTab === "profile") {
+  if ((monster || inspectedTab !== "profile") && frontier) document.dispatchEvent(new CustomEvent("battle-profile-panel"));
+  if (monster) {
+    showMonsterDetails(state.encounter?.monsterDetails,inspectedTab);
+  } else if (inspectedTab === "profile") {
     showProfile(unit);
   } else if (inspectedTab === "attributes") {
     showAttributes(unit);
   } else if (inspectedTab === "dialogue") {
     showDialogue(unit);
-  } else if (inspectedTab === "background") {
-    $("unit-view").textContent = unit.bio;
   } else if (inspectedTab === "equipment") {
     showEquipment(unit);
-  } else if (inspectedTab === "mount") {
-    showMount(unit);
   }
 }
 
@@ -988,7 +975,7 @@ function accuracyPanels(accuracy,skillName) {
   if (activeDodge) dodgeLines.push(["基础闪避 " + Math.max(0,rawDodge) + "% + 主动闪避 " + activeDodge + "%",
     "合计闪避修正 " + accuracy.dodge + "%"]);
   const dodge = accuracy.dodgeLimit > accuracy.blockLimit ? subpanel("dodge",
-    sumOfTerms([["目标敏捷",attributeDodge],["目标士气",accuracy.moraleDodge]]) || "0%",
+    sumOfTerms([[accuracy.dodgeSource ?? "目标敏捷",attributeDodge],["目标士气",accuracy.moraleDodge]]) || "0%",
     (rawDodge<0 ? "修正合计 " + rawDodge : activeDodge ? "基础闪避 " + rawDodge : "合计闪避修正 " + accuracy.dodge) + "%",dodgeLines) : "";
   const baseBlock = accuracy.baseBlock ?? 0;
   const shieldBonus = accuracy.shieldBonus ?? 0;
@@ -1166,10 +1153,14 @@ function showReachDetails(anchor,point) {
   else positionTooltip(anchor,panel);
 }
 
+const canAutoBattle = () => state.phase !== "setup" && state.phase !== "ended";
+
 function reportToolbar() {
   if (!embedded) return;
   window.parent.postMessage({ type: "campfire-battle-toolbar", battleId, toolbar: {
     phase: state.phase,
+    autoBattle: Boolean(state.autoBattle),
+    canAutoBattle: canAutoBattle(),
     terrains: state.terrains.map(({ id, name }) => ({ id, name })),
     terrain: state.terrain.id,
     weather: state.weather.id,
@@ -1178,9 +1169,13 @@ function reportToolbar() {
   } }, window.location.origin);
 }
 
-function reportFrontierResult() {
+function reportFrontierResult(defeatChoice) {
   const result = battleSession.result();
-  if (result) window.parent.postMessage({type:"campfire-frontier-battle-finished",battleId,result},window.location.origin);
+  if (!result) return;
+  if (defeatChoice && result.outcome === "defeat") {
+    result.defeatChoice = defeatChoice;
+  }
+  window.parent.postMessage({type:"campfire-frontier-battle-finished",battleId,result},window.location.origin);
 }
 
 function render() {
@@ -1225,11 +1220,13 @@ function render() {
 function renderWeather(weather, indoors) {
   const layer = $("weather-visual");
   layer.classList.toggle("underground", Boolean(indoors));
-  if (layer.dataset.weather === weather) return;
+  const outdoorSky = String(!indoors && !document.body.dataset.lighting);
+  if (layer.dataset.weather === weather && layer.dataset.outdoorSky === outdoorSky) return;
   layer.dataset.weather = weather;
+  layer.dataset.outdoorSky = outdoorSky;
   layer.innerHTML = weatherParticles(weather).map(({left,top,delay}) =>
     '<i style="left:' + left + '%;top:' + top + '%;animation-delay:' + delay + 's"></i>'
-  ).join("");
+  ).join("") + (outdoorSky === "true" ? weatherSkyMarkup(weather) : "");
 }
 
 function openRules() {
@@ -1246,53 +1243,90 @@ function openRules() {
   }},location.origin);
 }
 
-const settlementLabels = {loot:"搜刮",recruit:"俘虏",execute:"处决",talk:"对话"};
+const settlementLabels = {loot:"搜刮",butcher:"屠宰",violate:"侵犯",recruit:"俘虏",execute:"处决"};
+const settlementEntryTabs = {
+  kills:{kind:"corpse",side:"enemy",empty:"暂无击杀"},
+  prisoners:{kind:"prisoner",side:"enemy",empty:"暂无俘虏"},
+  fallen:{kind:"corpse",side:"player",empty:"暂无牺牲"},
+};
+let settlementEntryTab = "prisoners";
+let settlementItemTab = "loot";
 const settlementFilters = {loot:"all",inventory:"all"};
 const itemKinds = {weapons:["武器"],equipment:["头盔","护甲","盾牌"]};
 
-function openBattleReport() {
+function openAftermath() {
   if (state.phase !== "ended") return;
+  if (opening) opening.hide();
   if ($("unit-dialog").open) $("unit-dialog").close();
   closeAttackDetails();
   closeReachDetails();
   clearTimeout(bubbleTimer);
+  const sparring = state.encounter?.arena?.mode === "sparring";
+  const defeated = state.winner !== "player" && state.endReason !== "withdrawal";
   $("battle-layout").hidden = true;
   $("victory-screen").hidden = false;
-  $("battle-report").hidden = false;
-  $("spoils-layout").hidden = true;
-  $("victory-actions").hidden = true;
+  $("victory-screen").dataset.spoils = String(Boolean(state.settlement));
+  $("spoils-layout").hidden = !state.settlement;
+  $("open-harvest-checks").hidden = !state.settlement;
+  $("defeat-choices").hidden = sparring || !defeated;
   $("leave-battle").hidden = true;
-  $("postbattle-reset").hidden = !frontier && Boolean(state.settlement);
-  if (frontier) $("postbattle-reset").textContent = battleSession.result().outcome === "defeat" ? "返回石岸镇" : "返回边境地图";
-  $("open-spoils").hidden = frontier || !state.settlement;
-  $("open-spoils").textContent = state.settlement?.left ? "查看队伍物资" : "进入搜刮";
+  $("pause-aftermath").hidden = true;
+  $("postbattle-reset").disabled = false;
+  $("postbattle-reset").hidden = (!sparring && defeated) || Boolean(state.settlement);
+  if (frontier) $("postbattle-reset").textContent = sparring ? "结束切磋" : state.encounter?.arena ? "返回城镇" : "返回冒险地图";
+  $("defeat-reload-detail").textContent = frontier ? "读取本局最近的战前存档" : "重开这场战斗";
+  setDefeatPending(false);
   $("victory-screen").style.setProperty("--victory-art",'url("./art/' + state.terrain.id + '.webp")');
-  $("victory-title").textContent = "战斗结算";
-  const result = state.winner === "player" ? "战斗胜利" : "战斗失败";
-  $("victory-context").textContent = state.terrain.name + " · " + (state.endReason === "withdrawal" ? "撤离战场 · " : "") + result;
-  $("report-rows").innerHTML = (state.report ?? []).map(unit=>'<tr' + (unit.fallen ? ' class="fallen"' : '') + '>' +
-    '<th scope="row">' + portraitImage(unit) + '<span>' + text(unit.name) +
-    (unit.fallen ? '<small>阵亡</small>' : '') + '</span></th>' +
-    '<td>' + unit.taken + '</td><td>' + unit.armor + '</td><td>' + unit.hp + '</td><td>' + (unit.armor+unit.hp) + '</td></tr>').join("");
+  const bounty = state.winner === "player" && state.encounter?.arena?.bounty;
+  const title = state.winner === "player" ? "战斗胜利" : defeated ? "我方战败" : "撤离战场";
+  $("victory-title").textContent = sparring ? "切磋结束" : state.settlement ? "战后搜刮" : title;
+  if (state.settlement) {
+    if (frontier) {
+      const battleLog = battleSession.result()?.battleLog;
+      window.parent.postMessage({type:"campfire-battle-victory-log",battleId,battleLog},window.location.origin);
+    }
+    settlementFilters.loot = settlementFilters.inventory = "all";
+    settlementEntryTab = "prisoners";
+    settlementItemTab = state.settlement.left ? "inventory" : "loot";
+    settlementSelection = null;
+    renderVictory();
+  }
+  $("aftermath-bounty").hidden = !bounty;
+  $("aftermath-bounty").textContent = bounty ? "赏金 " + bounty + " 克朗" : "";
   $("victory-title").focus();
+}
+
+function setDefeatPending(pending,message="") {
+  const panel = $("defeat-choices");
+  for (const choice of panel.querySelectorAll("[data-defeat-choice]")) choice.disabled = pending;
+  panel.setAttribute("aria-busy",String(pending));
+  const notice = $("defeat-error");
+  notice.textContent = message;
+  notice.hidden = !message;
+}
+
+function openBattleRecord() {
+  const report = state.report ?? [];
+  const highestOutput = report.length ? report[0].armor + report[0].hp : 0;
+  $("report-rows").innerHTML = report.map((unit,index)=>{
+    const output = unit.armor + unit.hp;
+    const share = highestOutput > 0 ? output / highestOutput : 0;
+    return '<tr' + (unit.fallen ? ' class="fallen"' : '') + '>' +
+      '<td class="report-rank"><span>' + (index+1) + '</span></td>' +
+      '<th scope="row" class="report-member"><div class="report-identity">' + portraitImage(unit,"report-portrait") +
+      '<span class="report-name">' + text(unit.name) + (unit.fallen ? '<small>阵亡</small>' : '') + '</span></div></th>' +
+      '<td>' + unit.taken + '</td><td>' + unit.armor + '</td><td>' + unit.hp + '</td>' +
+      '<td class="report-output"><strong>' + output + '</strong><span class="report-output-track" aria-hidden="true">' +
+      '<span style="--output-share:' + share + '"></span></span></td></tr>';
+  }).join("") || '<tr><td class="report-empty" colspan="6">暂无战斗数据</td></tr>';
+  $("battle-report").scrollTop = 0;
+  $("battle-record-dialog").showModal();
 }
 
 function canSettle(entry,command) {
-  if (!entry || entry.disposition || command === "talk") return false;
-  return command === "loot" ? entry.kind === "corpse" && !entry.looted : entry.kind === "prisoner";
-}
-
-function openSpoils() {
-  if (!state.settlement) return;
-  settlementFilters.loot = settlementFilters.inventory = "all";
-  $("battle-report").hidden = true;
-  $("open-spoils").hidden = true;
-  $("spoils-layout").hidden = false;
-  $("victory-title").textContent = "战后搜刮";
-  const result = {surrender:"敌方投降",withdrawal:"敌方撤离",elimination:"敌方全灭"};
-  $("victory-context").textContent = state.terrain.name + " · " + result[state.endReason];
-  renderVictory();
-  $("victory-title").focus();
+  if (!entry) return false;
+  if (command === "violate") return frontier && entry.card.side === "enemy";
+  return !settlementProblem(entry,command);
 }
 
 function inventoryItem(item) {
@@ -1300,13 +1334,38 @@ function inventoryItem(item) {
     (item.max === undefined ? '' : ' · 耐久 ' + item.current + ' / ' + item.max) + '</small></span><b>×' + item.quantity + '</b>';
 }
 
-function renderSettlementItems(panel) {
+function renderSettlementItems() {
+  const panel = settlementItemTab;
   const filter = settlementFilters[panel];
   const items = state.settlement[panel];
   const visibleItems = filter === "all" ? items : items.filter(item=>itemKinds[filter].includes(item.kind));
-  const list = $("victory-" + panel);
-  const empty = $(panel + "-empty");
+  const list = $("victory-items-list");
+  const empty = $("spoils-empty");
   const collectable = panel === "loot";
+  const harvest = state.settlement.harvestChecks ?? [];
+  $("take-all").hidden = state.settlement.left || !collectable;
+  $("take-all").disabled = !items.length;
+  if (frontier) {
+    const host = $("battle-spoils-mount");
+    host.hidden = false;
+    list.hidden = empty.hidden = true;
+    $("spoils-fallback-filters").hidden = true;
+    const {loot,inventory,left} = state.settlement;
+    document.dispatchEvent(new CustomEvent("battle-spoils-panel",{detail:{
+      host,panel,loot,collected:inventory.map(item=>({...item,returnKey:settlementItemKey(item)})),left,harvest:harvest.slice(),
+      take:id=>send({type:"settle",command:"take",target:id}),
+      putBack:key=>send({type:"settle",command:"return",target:key}),
+    }}));
+    return;
+  }
+  $("battle-harvest-mount").innerHTML = harvest.map(({target,tier,score,check,drops}) => {
+    const gained = drops.map(({name,qty}) => text(name) + " ×" + qty).join("、");
+    const roll = check ? '<span>1d' + check.sides + '（' + check.rolled + '） ' +
+      (check.bonus < 0 ? '− ' : '+ ') + Math.abs(check.bonus) + ' = ' + score +
+      (check.difficulty === undefined ? '' : '　难度 ' + check.difficulty) + '</span>' : '';
+    return '<p class="harvest-fallback"><strong>屠宰' + text(tier ?? "") + '</strong><span>' +
+      text(target) + ' · ' + (gained ? '取得 ' + gained : '无可收取的材料') + '</span>' + roll + '</p>';
+  }).join("") || '<p class="harvest-fallback">暂无搜刮检定</p>';
   list.hidden = visibleItems.length === 0;
   empty.hidden = !list.hidden;
   empty.textContent = filter === "all" ? (collectable ? "暂无战利品" : "暂无队伍物资") :
@@ -1316,54 +1375,76 @@ function renderSettlementItems(panel) {
     if (state.settlement.left) return '<li class="stored-item">' + content + '</li>';
     const action = collectable ? "收取" : "放回";
     const target = collectable ? 'data-take="' + item.id + '"' :
-      'data-return-stack="' + text(JSON.stringify([item.kind,item.name,item.current,item.max])) + '"';
+      'data-return-stack="' + text(settlementItemKey(item)) + '"';
     return '<li><button class="item-transfer" type="button" ' + target + ' aria-label="' + action + ' ' +
       text(item.name) + '">' + content + '<span class="transfer-label">' + action + '</span></button></li>';
   }).join("");
-  for (const button of list.closest(".victory-panel").querySelectorAll("[data-item-filter]")) {
+  for (const button of $("spoils-layout").querySelectorAll("[data-item-filter]")) {
     button.setAttribute("aria-pressed",String(button.dataset.itemFilter === filter));
   }
 }
 
-function renderVictory() {
-  const {entries,loot,left} = state.settlement;
-  const focused = document.activeElement?.dataset.settlementEntry;
-  $("leave-battle").hidden = left;
-  $("postbattle-reset").hidden = !left;
-  $("victory-entries").hidden = left;
-  $("enemies-cleared").hidden = !left;
-  $("execute-all").disabled = !entries.some(entry=>canSettle(entry,"execute"));
-  $("search-all").disabled = !entries.some(entry=>canSettle(entry,"loot"));
-  for (const [id,kind,side] of [["prisoner-cards","prisoner","enemy"],["friendly-casualties","corpse","player"],["enemy-casualties","corpse","enemy"]]) {
-    const cards = entries.filter(entry=>entry.kind===kind && entry.card.side===side)
-      .map(entry=>renderCard(entry.card,undefined,entry)).join("");
-    $(id).innerHTML = cards || '<p class="victory-empty">暂无</p>';
-  }
-  const entry = entries.find(item=>item.card.id===settlementSelection);
-  const menu = $("victory-actions");
-  if (entry && !left) {
-    menu.setAttribute("aria-label",entry.card.name + "的结算操作");
-    const commands = entry.kind === "corpse" ? ["loot"] : ["talk","recruit","execute"];
-    menu.innerHTML = commands.map(command=>'<button type="button" data-settlement-command="' + command + '"' +
-      (canSettle(entry,command) ? '' : ' disabled') + (command === "talk" ? ' title="暂未开放"' : '') + '>' +
-      settlementLabels[command] + '</button>').join("");
-  } else menu.replaceChildren();
-  $("take-all").disabled = !loot.length;
-  renderSettlementItems("loot");
-  renderSettlementItems("inventory");
-  if (focused && !left) $("victory-entries").querySelector('.card-select[data-settlement-entry="' + focused + '"]')?.focus({preventScroll:true});
-  positionVictoryMenu();
+function positionSettlementActions() {
+  const entries = $("victory-entries");
+  const anchor = Array.from(entries.querySelectorAll("[data-spoils-card]")).find(card=>card.dataset.spoilsCard===settlementSelection);
+  positionCardMenu($("victory-actions"),anchor,entries.getBoundingClientRect());
 }
 
-function positionVictoryMenu() {
-  const entries = $("victory-entries");
-  const anchor = entries.hidden ? null : entries.querySelector('[data-spoils-card="' + settlementSelection + '"]');
-  positionCardMenu($("victory-actions"),anchor,entries.getBoundingClientRect());
+function renderVictory() {
+  const {entries,left} = state.settlement;
+  const focused = document.activeElement;
+  const focusedUnit = focused?.dataset.settlementEntry;
+  const focusedCommand = focused?.dataset.settlementCommand;
+  $("leave-battle").hidden = left;
+  $("pause-aftermath").hidden = left || !frontier;
+  $("postbattle-reset").hidden = !left;
+  $("process-all").disabled = left || !entries.some(pendingCorpseAction);
+  $("execute-all").hidden = left || settlementEntryTab !== "prisoners" || !entries.some(entry=>canSettle(entry,"execute"));
+  const matches = tab => entries.filter(entry=>entry.kind === tab.kind && entry.card.side === tab.side && entry.disposition !== "butcher");
+  for (const button of $("spoils-layout").querySelectorAll("[data-entry-tab]")) {
+    button.setAttribute("aria-pressed",String(button.dataset.entryTab === settlementEntryTab));
+    button.querySelector("span").textContent = left ? "" : matches(settlementEntryTabs[button.dataset.entryTab]).length;
+  }
+  for (const button of $("spoils-layout").querySelectorAll("[data-spoils-tab]")) {
+    button.setAttribute("aria-pressed",String(button.dataset.spoilsTab === settlementItemTab));
+  }
+  const tab = settlementEntryTabs[settlementEntryTab];
+  const visible = left ? [] : matches(tab);
+  if (!visible.some(entry=>entry.card.id===settlementSelection)) settlementSelection = null;
+  const cards = visible.map(entry=>{
+    const done = entry.looted || entry.disposition;
+    const status = entry.looted ? "已搜刮" : entry.disposition ? "已" + settlementLabels[entry.disposition] :
+      entry.kind === "prisoner" ? "待处置" : entry.monster ? "" : "待搜刮";
+    return '<div class="spoils-card">' + renderCard(entry.card,undefined,entry) +
+      (status ? '<span class="spoils-state' + (done ? ' done' : '') + '">' + status + '</span>' : "") + '</div>';
+  }).join("");
+  $("victory-entries").innerHTML = cards ? '<div class="victory-cards">' + cards + '</div>' :
+    '<p class="spoils-empty">' + (left ? "已离开战场" : tab.empty) + '</p>';
+  const entry = visible.find(item=>item.card.id===settlementSelection);
+  const menu = $("victory-actions");
+  if (entry) {
+    menu.setAttribute("aria-label",entry.card.name + "的结算操作");
+    const commands = [entry.monster ? "butcher" : "loot"];
+    if (canSettle(entry,"violate")) commands.unshift("violate");
+    menu.innerHTML = commands.map(command=>'<button type="button" data-settlement-command="' + command + '"' +
+      (canSettle(entry,command) ? '' : ' disabled') + '>' +
+      settlementLabels[command] + '</button>').join("");
+  } else {
+    menu.setAttribute("aria-label","人物结算操作");
+    menu.innerHTML = "";
+  }
+  positionSettlementActions();
+  renderSettlementItems();
+  const cardButton = $("victory-entries").querySelector('.card-select[data-settlement-entry="' + (focusedUnit || settlementSelection) + '"]');
+  if (focusedCommand) {
+    const commandButton = menu.querySelector('[data-settlement-command="' + focusedCommand + '"]:enabled');
+    (commandButton ?? cardButton)?.focus({preventScroll:true});
+  } else if (focusedUnit) cardButton?.focus({preventScroll:true});
 }
 
 function requestLeave() {
   const {entries,loot} = state.settlement;
-  const pending = entries.filter(entry=>canSettle(entry,"loot")).length;
+  const pending = entries.filter(entry=>entry.items.length && pendingCorpseAction(entry) === "loot").length;
   const items = loot.reduce((total,item)=>total+item.quantity,0);
   const losses = [pending ? pending + " 名阵亡者身上的装备尚未搜刮" : "",
     items ? items + " 件战利品尚未收入队伍物资" : ""].filter(Boolean);
@@ -1458,7 +1539,7 @@ function showCasualty({left,top,width,height,card},hit) {
     const prior = meterHistory.get(hit.target + "/" + kind);
     const bar = card.querySelector(".meter." + kind);
     if (bar && prior && loss > 0) {
-      bar.outerHTML = meter(kind,label,Math.max(0,prior.current - loss),prior.max,"",hit.target);
+      bar.outerHTML = meter(kind,label,Math.max(0,prior.current - loss),prior.max,hit.target);
     }
   }
   const effect = document.createElement("div");
@@ -1483,7 +1564,7 @@ function showStrike(hit,departedPoint) {
   if (!target) return;
   blood.show(target,hit.hpLoss,bloodAppearanceDelay);
   const missed = hit.hit === false;
-  if (departedPoint) showCasualty(departedPoint,hit);
+  if (departedPoint && !hit.arenaWithdrawn) showCasualty(departedPoint,hit);
   else if (!missed) target.card.classList.add("impact");
   const effect = document.createElement("div");
   effect.className = "damage" + (missed ? " missed" : "");
@@ -1601,6 +1682,11 @@ function onUnit(id) {
 document.addEventListener("click",(event) => {
   const button = event.target.closest("button");
   if (actionMenuActor && !event.target.closest("#unit-actions,[aria-controls='unit-actions']")) toggleActionMenu();
+  if (settlementSelection && !$("spoils-layout").hidden &&
+    !event.target.closest("#victory-actions,[data-settlement-entry],#pause-aftermath")) {
+    settlementSelection = null;
+    renderVictory();
+  }
   if (button?.dataset.attack) {
     showAttackDetails(button);
     if (event.detail === 0) $("attack-details").querySelector('button[data-roll-section="hit"]')?.focus();
@@ -1618,14 +1704,37 @@ document.addEventListener("click",(event) => {
     return reportFrontierResult();
   }
   if (button.id === "open-rules") return openRules();
-  if (button.id === "open-spoils") return openSpoils();
+  if (button.id === "open-battle-record") return openBattleRecord();
+  if (button.id === "open-harvest-checks" && state.settlement) {
+    $("harvest-checks-list").scrollTop = 0;
+    $("harvest-checks-dialog").showModal();
+    return;
+  }
+  if (button.dataset.defeatChoice && !button.disabled && !$("defeat-choices").hidden) {
+    if (!frontier) return send({type:"reset"});
+    setDefeatPending(true,button.dataset.defeatChoice === "reload" ? "正在读取存档…" : "正在继续冒险…");
+    return reportFrontierResult(button.dataset.defeatChoice);
+  }
+  if (button.dataset.entryTab) {
+    settlementEntryTab = button.dataset.entryTab;
+    settlementSelection = null;
+    $("victory-entries").scrollTop = 0;
+    return renderVictory();
+  }
+  if (button.dataset.spoilsTab) {
+    settlementItemTab = button.dataset.spoilsTab;
+    $("victory-items").scrollTop = 0;
+    return renderVictory();
+  }
   if (button.dataset.itemFilter) {
-    const panel = button.closest("[data-item-panel]").dataset.itemPanel;
-    settlementFilters[panel] = button.dataset.itemFilter;
-    $("victory-" + panel).scrollTop = 0;
-    return renderSettlementItems(panel);
+    settlementFilters[settlementItemTab] = button.dataset.itemFilter;
+    $("victory-items").scrollTop = 0;
+    return renderSettlementItems();
   }
   if (button.id === "leave-battle" && !sending) return requestLeave();
+  if (button.id === "pause-aftermath" && frontier && !sending && !state.settlement?.left) {
+    return window.parent.postMessage({type:"campfire-battle-pause-aftermath",battleId},window.location.origin);
+  }
   if (button.id === "confirm-leave") {
     $("leave-dialog").close();
     return send({type:"settle",command:"leave"});
@@ -1641,7 +1750,16 @@ document.addEventListener("click",(event) => {
     return renderVictory();
   }
   if (button.dataset.settlementCommand) {
-    return send({type:"settle",command:button.dataset.settlementCommand,target:settlementSelection});
+    const command = button.dataset.settlementCommand;
+    if (command === "violate") {
+      const entry = state.settlement?.entries.find(item=>item.card.id===settlementSelection);
+      if (canSettle(entry,command) && !state.settlement.left) {
+        const targetKind = entry.kind === "corpse" || entry.card.hp <= 0 ? "corpse" : "prisoner";
+        window.parent.postMessage({type:"campfire-battle-violate",battleId,name:entry.card.name,targetKind},window.location.origin);
+      }
+      return;
+    }
+    return send({type:"settle",command,target:settlementSelection});
   }
   if (button.dataset.details) return showUnitDetails(button.dataset.details);
   if (button.hasAttribute("data-current-details") && actionMenuActor) {
@@ -1746,7 +1864,7 @@ $("unit-view").addEventListener("click",event => {
 });
 $("unit-dialog").querySelector('[role="tablist"]').addEventListener("keydown",(event) => {
   if (!["ArrowLeft","ArrowRight","Home","End"].includes(event.key)) return;
-  const tabs = Array.from(event.currentTarget.querySelectorAll('[role="tab"]:not(:disabled)'));
+  const tabs = Array.from(event.currentTarget.querySelectorAll('[role="tab"]:not(:disabled):not([hidden])'));
   const index = tabs.findIndex((tab) => tab.dataset.unitTab === inspectedTab);
   const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 :
     (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
@@ -1792,7 +1910,7 @@ for (const type of ["pointerout","focusout"]) {
   });
 }
 document.addEventListener("keydown",(event) => {
-  if (event.key === "Escape" && !$("unit-dialog").open) {
+  if (event.key === "Escape" && !$("unit-dialog").open && !$("battle-record-dialog").open) {
     if (battleOptions.open) {
       battleOptions.open = false;
       battleOptions.querySelector("summary").focus();
@@ -1804,8 +1922,12 @@ document.addEventListener("keydown",(event) => {
       return;
     }
     if (settlementSelection && !$("spoils-layout").hidden && !$("leave-dialog").open) {
+      const previous = settlementSelection;
       settlementSelection = null;
-      return renderVictory();
+      renderVictory();
+      Array.from($("victory-entries").querySelectorAll("[data-settlement-entry]"))
+        .find(button=>button.dataset.settlementEntry===previous)?.focus();
+      return;
     }
     closeAttackDetails();
     closeReachDetails();
@@ -1819,13 +1941,14 @@ document.addEventListener("keydown",(event) => {
 });
 window.addEventListener("resize",() => {
   $("unit-stat-details").hidden = true;
-  if (!$("victory-screen").hidden) positionVictoryMenu();
-  else if (state) { closeAttackDetails(); closeReachDetails(); positionActionMenu(); drawArrow(); showSpeech(); }
+  if (state && $("victory-screen").hidden) {
+    closeAttackDetails(); closeReachDetails(); positionActionMenu(); drawArrow(); showSpeech();
+  }
+  if (settlementSelection && !$("spoils-layout").hidden) positionSettlementActions();
 });
-$("victory-entries").addEventListener("scroll",positionVictoryMenu,{passive:true});
+$("victory-entries").addEventListener("scroll",positionSettlementActions,{passive:true});
 window.addEventListener("scroll",() => {
-  if (!$("victory-screen").hidden) return positionVictoryMenu();
-  if (!state) return;
+  if (!state || !$("victory-screen").hidden) return;
   refreshAttackDetailsPosition();
   if (reachAnchor) {
     const rect = reachAnchor.getBoundingClientRect();
@@ -1850,7 +1973,21 @@ if (frontier) window.addEventListener("message",function loadEncounter(event) {
 });
 if (frontier) window.addEventListener("message",event=>{
   if (event.origin !== location.origin || event.source !== window.parent ||
-      event.data?.type !== "campfire-battle-portraits" || event.data.battleId !== battleId || !state) return;
+      event.data?.battleId !== battleId || !state) return;
+  if (event.data.type === "campfire-battle-toggle-auto") {
+    if (canAutoBattle()) send({type:"autoBattle",enabled:!state.autoBattle});
+    return;
+  }
+  if (event.data.type === "campfire-battle-resume-aftermath" && !$("spoils-layout").hidden) {
+    positionSettlementActions();
+    $("pause-aftermath").focus({preventScroll:true});
+    return;
+  }
+  if (event.data.type === "campfire-frontier-defeat-error" && !$("defeat-choices").hidden) {
+    setDefeatPending(false,event.data.message || "读档失败。");
+    return;
+  }
+  if (event.data.type !== "campfire-battle-portraits") return;
   portraitUpdates = event.data.portraits;
   orderVersion = undefined;
   render();

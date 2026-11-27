@@ -4,7 +4,7 @@
   const WIDTH = 32;
   const HEIGHT = 21;
   const TERRAINS = ['grass', 'forest', 'denseforest', 'hill', 'mountain', 'field', 'stream', 'river', 'water',
-    'marsh', 'steppe', 'desert', 'saltflat', 'yard', 'cobble', 'bank', 'wall', 'vegetables', 'flowergarden', 'underground', 'lava'];
+    'marsh', 'steppe', 'desert', 'yard', 'cobble', 'bank', 'wall', 'vegetables', 'flowergarden', 'underground', 'lava'];
   const isWater = (terrain) => terrain === 'stream' || terrain === 'river' || terrain === 'water';
   const DIRECTIONS = { north: 1, east: 2, south: 4, west: 8 };
 

@@ -178,7 +178,6 @@ canvas.addEventListener('pointermove', (event) => {
   const next = known ? regionAt(map, x, y) : undefined;
   if (next === hovered) return;
   hovered = next;
-  get('region').textContent = hovered?.name ?? '';
   draw();
 });
 canvas.addEventListener('pointerleave', () => {
@@ -186,7 +185,6 @@ canvas.addEventListener('pointerleave', () => {
   hovered = undefined;
   hoveredSite = undefined;
   inspectTeams();
-  get('region').textContent = '';
   inspect();
 });
 canvas.addEventListener('click', (event) => {
@@ -221,7 +219,6 @@ window.addEventListener('message', async (event) => {
       const firstKnown = visibility.findIndex(state => state !== 'unexplored');
       selected = party ?? (firstKnown < 0 ? undefined : { x: firstKnown % map.width, y: Math.floor(firstKnown / map.width) });
       hovered = hoveredSite = undefined;
-      get('region').textContent = '';
       get('map-layers').hidden = !data.layer;
       for (const button of get('map-layers').querySelectorAll('button')) {
         button.setAttribute('aria-pressed', String(button.dataset.layer === data.layer));

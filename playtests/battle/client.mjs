@@ -3,7 +3,7 @@ import { createBattleSession } from "./session.mjs";
 import defaultMounts from "../../data/rules/mounts.json" with { type: "json" };
 
 const weatherIds = ["clear", "cloudy", "lightRain", "heavyRain", "lightFog", "heavyFog", "wind", "lightSnow", "heavySnow", "darkness"];
-const terrainIds = ["grass", "farmland", "wood", "denseForest", "hill", "mountain", "snowMountain", "stream", "river", "lake", "marsh", "steppe", "desert", "saltFlat", "village", "mine", "cave"];
+const terrainIds = ["grass", "farmland", "wood", "denseForest", "hill", "mountain", "snowMountain", "stream", "river", "lake", "marsh", "steppe", "desert", "village", "mine", "cave"];
 const weaponFields = {
   range:"range", damage:"damage", penetration:"penetration", headBonus:"head_bonus",
   armorBonus:"armor_bonus", shieldBonus:"shield_bonus", largeBonus:"large_bonus", initiative:"initiative",
@@ -19,7 +19,7 @@ function equipWeapon(piece, fallback) {
   const base = catalog.weapons[piece.base] ?? catalog.weapons[fallback];
   const weapon = {...base,...weaponUpdates(piece.rule ?? {}),name:piece.name};
   if (!["短","长","远程"].includes(weapon.range) || weapon.damage === undefined) return undefined;
-  return {...weapon,baseName:piece.base,twoHanded:piece.twoHanded,magic:base?.magic ?? piece.base === "法杖",penetration:weapon.penetration ?? 0};
+  return {...weapon,baseName:piece.base,twoHanded:piece.twoHanded,magic:base?.magic ?? piece.base === "法杖",penetration:weapon.penetration ?? 0,campaignGear:true};
 }
 
 function equipArmor(piece, shield = false) {
@@ -28,10 +28,11 @@ function equipArmor(piece, shield = false) {
   const {durability = base?.durability, attribute_cap = base?.attributeCap, block_bonus, initiative = base?.initiative} = piece.rule ?? {};
   const blockBonus = block_bonus === undefined ? base?.blockBonus : block_bonus * 100;
   if (durability === undefined || (shield && blockBonus === undefined && !piece.rule?.category.includes("盾"))) return undefined;
-  return {name:piece.name,impactKind:piece.impactKind,durability,current:piece.current,attributeCap:attribute_cap,blockBonus,initiative};
+  return {name:piece.name,impactKind:piece.impactKind,durability,current:piece.current,attributeCap:attribute_cap,blockBonus,initiative,campaignGear:true};
 }
 
 export function battleParticipantGear(unit) {
+  if (unit.monster) return unit;
   const itemFor = item => {
     if (!item?.swap) return item;
     const {slot,gear} = item.swap;

@@ -1,4 +1,4 @@
 {
-  "unarmed": { "name": "徒手", "description": "未装备武器时使用的空手攻击。", "grip": "空手", "style": "非武装", "range": "短", "damage": 20, "penetration": 0, "headBonus": 0, "armorBonus": 0, "shieldBonus": 0, "largeBonus": 0, "initiative": 0 },
-  "woodClub": { "name": "简易武器", "description": "临时拿来应战的日常物件。铁匠手边的锤子、矿工用的短镐，甚至路边捡来的一截粗树枝，都能在情急时拿来防身。", "grip": "单手", "style": "非武装", "range": "短", "damage": 25, "penetration": 0.05, "headBonus": 0, "armorBonus": -0.5, "shieldBonus": -0.25, "largeBonus": 0, "initiative": -1 }
+  "unarmed": { "name": "徒手", "description": "未装备武器时使用的空手攻击。", "grip": "空手", "style": "非武装", "range": "短", "damageType": "bludgeoning", "damage": 20, "penetration": 0, "headBonus": 0, "armorBonus": 0, "shieldBonus": 0, "largeBonus": 0, "initiative": 0 },
+  "woodClub": { "name": "简易武器", "description": "临时拿来应战的日常物件。铁匠手边的锤子、矿工用的短镐，甚至路边捡来的一截粗树枝，都能在情急时拿来防身。", "grip": "单手", "style": "非武装", "range": "短", "damageType": "bludgeoning", "damage": 25, "penetration": 0.05, "headBonus": 0, "armorBonus": -0.5, "shieldBonus": -0.25, "largeBonus": 0, "initiative": -1 }
 }

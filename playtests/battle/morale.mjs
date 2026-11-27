@@ -57,7 +57,7 @@ export function settleMorale(state, event, report) {
     const count = side => fighters.filter(unit=>unit.side===side).length;
     const frontCount = side => fighters.filter(unit=>unit.side===side && ownFront(unit)).length;
     const propose = (unit,delta,reason) => {
-      if (!onField(unit) || (delta>0 && routedInEvent.has(unit.id))) return;
+      if (!onField(unit) || unit.monster?.morale === false || (delta>0 && routedInEvent.has(unit.id))) return;
       if (outranks(delta,affected.get(unit)) && outranks(delta,selected.get(unit))) affected.set(unit,{delta,reason});
     };
     const teamChange = (side,delta,reason) => {

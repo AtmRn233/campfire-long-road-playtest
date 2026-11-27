@@ -4,6 +4,7 @@ type Scores = Partial<Record<string, number>>
 export function characterProfileTop(profile: {
   gender?: string
   genderLabel?: string
+  faceLabel?: string
   bodyLabel?: string
   raceName?: string
   originName?: string
@@ -28,7 +29,7 @@ export function characterAttributeSheet(unit: {
 
 export interface ProfileMeter { current: number; max: number }
 export interface CharacterProfile {
-  gender?: string; genderLabel?: string; bodyLabel?: string; raceName?: string; originName?: string
+  gender?: string; genderLabel?: string; faceLabel?: string; bodyLabel?: string; raceName?: string; originName?: string
   profession?: string; factionLabel?: string; level?: number; experience?: string
   profileResistances?: string[]; profileStatuses?: string[]; traits?: string[]
   profileStatSources?: Partial<Record<ProfileStat, ProfileStatSource>>
@@ -38,8 +39,13 @@ export interface CharacterProfile {
   stamina?: ProfileMeter; shield?: ProfileMeter | null; magic?: ProfileMeter | null; mount?: ProfileMeter | null
 }
 
-export type ProfileStat = 'block' | 'dodge' | 'damage' | 'hit'
+export type ProfileStat = 'initiative' | 'block' | 'dodge' | 'damage' | 'hit'
 export interface ProfileStatSource { title: string; rows: [string, string][]; total: string; note?: string }
-export function characterProfileData(unit: CharacterProfile): { vitals: [label: string, value: number | string, stat?: ProfileStat][] }
+export function characterProfileData(unit: CharacterProfile): {
+  identity: [label: string, value: string][]
+  progress: [label: string, value: string][]
+  pairs: [label: string, value: string][]
+  vitals: [label: string, value: number | string, stat?: ProfileStat][]
+}
 export function characterProfileSections(unit: CharacterProfile, interactive?: boolean): { facts: string; vitals: string; resources: string }
 export function renderCharacterProfileData(unit: CharacterProfile, interactive?: boolean): string

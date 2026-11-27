@@ -21,6 +21,7 @@ export function createOpeningScreen({text,renderCard,send}) {
   let dragging;
 
   const actualWidth = () => state.fieldColumns.length;
+  const canStart = battle => !battle.encounter || battle.units.some(unit=>unit.side==="enemy" && unit.hp>0 && !unit.noncombatant);
 
   function readPresets(key) {
     try { return JSON.parse(localStorage.getItem(key)) ?? {}; }
@@ -29,21 +30,32 @@ export function createOpeningScreen({text,renderCard,send}) {
 
   function load(next,key) {
     state = next;
-    if (screen.hidden) {
+    const firstLoad = screen.hidden;
+    const {encounter} = state;
+    const wildMonster = encounter?.wildMonster === true;
+    const arena = encounter?.arena;
+    if (firstLoad) {
       storageKey = "campfire.formation." + key;
       presets = readPresets(storageKey);
       screen.style.setProperty("--encounter-art",'url("./art/' + state.terrain.id + '.webp")');
-      $("encounter-title").textContent = state.encounter ? "遭遇" + state.encounter.name : "遭遇敌军";
-      $("encounter-hostile-title").textContent = state.encounter?.hostile === false ? "对方" : "敌方";
-      $("withdraw-encounter").textContent = state.encounter?.hostile === false ? "离开" : "撤退";
+      const opponent = wildMonster ? "怪物" : (encounter?.name ?? "敌军");
+      const sparring = arena?.mode === "sparring";
+      const peaceful = encounter?.hostile === false;
+      $("encounter-title").textContent = sparring || arena?.mode === "training" ? encounter.name : arena ? "竞技场 · " + encounter.name : "遭遇" + opponent;
+      $("encounter-hostile-title").textContent = arena ? "对手" : peaceful ? "对方" : "敌方";
+      $("withdraw-encounter").textContent = sparring ? "取消切磋" : peaceful ? "离开" : "撤退";
+      $("start-encounter").textContent = sparring ? "开始切磋" : peaceful ? "强制攻击" : "开始战斗";
+      $("open-parley").hidden = wildMonster || Boolean(arena);
+      $("prepare-encounter").hidden = sparring || arena?.mode === "training";
       screen.hidden = false;
     }
     updateSummary();
+    if (firstLoad && encounter?.openParley && encounter.hostile === false) openParley();
   }
 
   function updateSummary() {
     const start = $("start-encounter");
-    start.disabled = !!state.encounter && !state.units.some(unit=>unit.side==="enemy" && unit.hp>0 && !unit.noncombatant);
+    start.disabled = !canStart(state);
     if (start.disabled) start.title = "对方没有战斗人员";
     else start.removeAttribute("title");
     for (const [side,id] of [["player","encounter-friendly"],["enemy","encounter-hostile"]]) {
@@ -195,7 +207,8 @@ export function createOpeningScreen({text,renderCard,send}) {
     editor.close();
   };
 
-  $("open-parley").onclick = () => {
+  function openParley() {
+    if (!state || $("open-parley").hidden || choice.open) return;
     const speaker = state.units.find(unit=>unit.id==="pc" && unit.side==="player") ?? state.units.find(unit=>unit.side==="player");
     const opponent = state.units.find(unit=>unit.side==="enemy");
     $("encounter-choice-title").textContent = "阵前对话";
@@ -204,22 +217,15 @@ export function createOpeningScreen({text,renderCard,send}) {
         '</strong>　我们无意交战。能让条路吗？</p><p><strong>') + text(opponent.name) +
       (state.encounter?.hostile === false ? '</strong>　你好。我们只是在这条路上遇见了。</p>' :
         '</strong>　收起兵器退回去。再往前，就是开战。</p>');
-    $("confirm-encounter-surrender").hidden = true;
     choice.showModal();
-  };
-  $("open-surrender").onclick = () => {
-    $("encounter-choice-title").textContent = "确认投降？";
-    $("encounter-choice-body").innerHTML = "<p>本次遭遇将以战败结束。</p>";
-    $("confirm-encounter-surrender").hidden = false;
-    choice.showModal();
-  };
-  $("confirm-encounter-surrender").onclick = () => {
-    choice.close();
-    send({type:"encounterExit",decision:"surrender"});
-  };
+  }
+  $("open-parley").onclick = openParley;
   $("withdraw-encounter").onclick = () => send({type:"encounterExit",decision:"retreat"});
   $("start-encounter").onclick = () => {
+    if (!state || !canStart(state)) return;
     const preset = presets[actualWidth()];
+    if (editor.open) editor.close();
+    if (choice.open) choice.close();
     send({type:"start",
       ...(validFormation(state,actualWidth(),preset) ? {formation:preset} : {}),
     });

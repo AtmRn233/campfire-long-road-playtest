@@ -1,4 +1,4 @@
-Character hurt/death recordings — 136 preserved recordings; 41 active selections
+Character hurt/death recordings — 136 preserved recordings; 35 active selections
 Changes: peak normalized to 0.5 and converted to PCM WAV in the audition library; leading silence skipped only at playback.
 No pitch changes for voice playback.
 
@@ -955,3 +955,7 @@ License: CC0-1.0 (licenses/CC0-1.0.txt)
 Original: sources/female-scream/originals/screams_0.ogg; segment 1.78–6.633 seconds
 
 2026-11-24 selection: male-hurt 12, male-death 7 (gold audition recommendations only); female-hurt 18, female-death 4 (all). Other credited files are preserved and excluded from runtime loading.
+
+2026-11-25: S1374 excluded from active female-death pool; female-death now 3, total active voices 40. Original file and credits preserved.
+
+2026-11-26: F01 Cici Type 1 and F05 RiddlesYouThis excluded (S2484, S2485, S2486, S1201, S1202). Female-hurt now 13; total active voices 35. All original files and credits preserved.

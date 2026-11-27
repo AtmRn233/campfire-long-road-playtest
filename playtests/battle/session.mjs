@@ -1,4 +1,5 @@
-import { accuracyFor, action, assertAttack, attackOptions, catalog, chooseEnemy, createBattle, defenseFor, drawWeather, effectiveAttribute, movementOptions, openColumn, orderedActors, reinforcementOptions, replaceBattleEquipment, retreatProblem, say } from "./battle.mjs";
+import { accuracyFor, action, assertAttack, attackOptions, catalog, chooseBattleAction, createBattle, defenseFor, drawWeather, effectiveAttribute, movementOptions, openColumn, orderedActors, reinforcementOptions, replaceBattleEquipment, retreatProblem, say } from "./battle.mjs";
+import { battleLogLines } from "./battleLog.mjs";
 
 export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math.random,weatherRoll=Math.random}={}) {
   const supplies = [];
@@ -13,17 +14,22 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
   let botTimer;
   let finishPendingAttack;
   let encounterMembers;
+  let encounterStarted = false;
   const snapshot = () => {
     state ??= newBattle();
     const now = Date.now();
     const {fallen,damageStats,supplies,moraleTracking,usedItems,itemSwaps,restoredMana,experience,...publicState} = state;
     const {weather} = state;
     const attacks = state.units.map(unit=>[unit,attackOptions(state,unit.id)]);
+    const victory = state.winner === "player";
+    const trackExperience = encounterMembers && (victory || state.endReason !== "withdrawal");
     return {
       ...publicState,weathers:catalog.weather,log:state.log.slice(),speeches:state.speeches.filter(line=>line.expiresAt>now),match,terrains:catalog.terrain,
-      units:state.units.map(unit=>{
+      units:state.units.filter(unit=>!unit.arenaWithdrawn).map(unit=>{
         const {dodge,meleeBlock,rangedBlock} = defenseFor(unit);
+        const counts = trackExperience && experience[unit.id];
         return {...unit,statuses:{...unit.statuses},dodge,meleeBlock,rangedBlock,
+          ...(counts ? {battleExperience:{counts:{...counts},victory}} : {}),
           effectiveAttributes:{dexterity:effectiveAttribute(unit,"dexterity"),intelligence:effectiveAttribute(unit,"intelligence")}};
       }),
       order:["ended","reinforcement"].includes(state.phase) ? [] : orderedActors(state).map(unit=>unit.id),
@@ -41,7 +47,7 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
   };
 
   function queueAttack(request) {
-    const side = request.type === "attack" ? "player" : "enemy";
+    const side = request.type === "attack" || request.type === "playerSkill" ? "player" : "enemy";
     const {actor} = assertAttack(state,request.actor,request.target,side);
     const game = state;
     const speech = say(game,actor,"ready");
@@ -92,12 +98,13 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
 
   function queueBot() {
     clearTimeout(botTimer);
-    if (state.phase !== "enemy" || state.busy) return;
+    if (state.busy || (state.phase !== "enemy" &&
+      !(state.autoBattle && ["player","reinforcement"].includes(state.phase)))) return;
     const game = state;
     botTimer = setTimeout(() => {
       if (state !== game) return;
-      const move = chooseEnemy(game);
-      if (move?.type === "enemyAttack" || (move?.type === "enemySkill" && move.target)) queueAttack(move);
+      const move = game.phase === "reinforcement" ? {type:"finishReinforcement"} : chooseBattleAction(game);
+      if (move?.target && ["attack","enemyAttack","playerSkill","enemySkill"].includes(move.type)) queueAttack(move);
       else if (move) {
         action(game,move,roll);
         queueBot();
@@ -113,12 +120,19 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
       state = newBattle();
       finishPendingAttack = undefined;
       match++;
+    } else if (request.type === "autoBattle") {
+      if (state.phase === "setup" || state.phase === "ended") return snapshot();
+      state.autoBattle = Boolean(request.enabled);
+      state.rev++;
     } else if (state.busy) {
       throw new Error("当前动作正在结算");
+    } else if (state.autoBattle) {
+      throw new Error("请先关闭自动战斗。");
     } else if (request.type === "attack") {
       queueAttack(request);
     } else {
       action(state,request,request.type === "terrain" ? weatherRoll : roll);
+      if (encounterMembers && request.type === "start") encounterStarted = true;
     }
     queueBot();
     return snapshot();
@@ -130,6 +144,9 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
     state = createBattle("clearing",weatherId,supplies,{...player,presetId:player.id,id:"pc"},rosterProfiles,members,partyMemberIds,enemies,encounter);
     if (Number.isSafeInteger(ammo) && ammo >= 0) Object.assign(state,{ ammoLeft:ammo, ammoSpent:0 });
     encounterMembers = [[player.id,"pc"],...allies.map((unit,i)=>[unit.id,members[i].id])];
+    if (encounter?.arena?.mode === "sparring") {
+      for (const opponent of enemies ?? []) encounterMembers.push([opponent.id,opponent.id]);
+    }
     state.dialogueEnabled = dialogueEnabled;
     finishPendingAttack = undefined;
     match++;
@@ -144,7 +161,7 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
     if (!unit) return null;
     return {
       unit, revision:state.rev, busy:state.busy,
-      locked:unit.side !== "player" || state.phase !== "setup",
+      locked:unit.side !== "player" || state.phase !== "setup" || ["training","sparring"].includes(state.encounter?.arena?.mode),
       usedItems:state.usedItems[id] ?? [], itemSwaps:state.itemSwaps[id] ?? [],
     };
   }
@@ -165,7 +182,9 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
     const outcome = state.winner === "player" ? "victory" : state.endReason === "withdrawal" ? "retreat" : "defeat";
     const hp = Object.fromEntries(encounterMembers.map(([member,unit])=>[member,state.units.find(entry=>entry.id===unit)?.hp ?? 0]));
     const durability = Object.fromEntries(encounterMembers.flatMap(([member,unit])=>{
-      const entry = state.units.find(entry=>entry.id===unit) ?? state.fallen.find(entry=>entry.card.id===unit)?.card;
+      const fallen = state.fallen.find(entry=>entry.card.id===unit);
+      if (fallen?.durability) return [[member,fallen.durability]];
+      const entry = state.units.find(entry=>entry.id===unit) ?? fallen?.card;
       if (!entry) return [];
       const slots = [["head",entry.armor.head],["body",entry.armor.body],["off_hand",entry.shield]]
         .filter(([,piece])=>piece && piece.current<piece.max).map(([slot,piece])=>[slot,piece.current]);
@@ -179,7 +198,18 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
       .map(([member,unit])=>[member,state.restoredMana[unit]]));
     const experience = outcome === "retreat" ? {} : Object.fromEntries(encounterMembers.filter(([,unit])=>state.experience[unit])
       .map(([member,unit])=>[member,{...state.experience[unit]}]));
-    return {outcome,hp,...(state.peacefulExit ? {peacefulExit:true} : {}),...(Object.keys(experience).length ? {experience} : {}),
+    const settlement = state.encounter?.persistentSpoils && state.settlement?.left ? state.settlement : null;
+    const materials = settlement?.inventory.filter(item=>item.harvested).map(item=>({name:item.name,qty:item.quantity}));
+    const spoils = settlement && {
+      ...(materials?.length ? {materials} : {}),
+      items:settlement.inventory.flatMap(item=>item.source ? [{...item.source,current:item.current}] : []),
+      prisoners:settlement.entries.filter(entry=>entry.kind==="prisoner" && ["recruit","execute"].includes(entry.disposition))
+        .map(entry=>({unit:entry.card.id,name:entry.card.name,outcome:entry.disposition === "recruit" ? "capture" : "execute",
+          hp:entry.card.hp,durability:entry.durability})),
+    };
+    return {outcome,hp,...(encounterStarted ? {battleLog:battleLogLines(state.log)} : {}),
+      ...(spoils ? {spoils} : {}),
+      ...(state.peacefulExit ? {peacefulExit:true} : {}),...(Object.keys(experience).length ? {experience} : {}),
       ...(Object.keys(durability).length ? {durability} : {}),
       ...(Object.keys(usedItems).length ? {usedItems} : {}),...(Object.keys(itemSwaps).length ? {itemSwaps} : {}),
       ...(Object.keys(mana).length ? {mana} : {})};

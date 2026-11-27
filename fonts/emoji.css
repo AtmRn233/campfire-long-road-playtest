@@ -1,0 +1,15 @@
+/* Noto Color Emoji subset for glyphs and sequences that older system fonts lack. */
+@font-face {
+  font-family: 'Campfire Emoji';
+  src: url('./noto-color-emoji-fallback.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+200D, U+2764, U+FE0F, U+1F32B, U+1F4BC, U+1F636, U+1F6DE,
+    U+1F9D1, U+1FA79, U+1FA84, U+1FA99-1FA9A, U+1FA9C, U+1FA9E, U+1FAA1-1FAA2,
+    U+1FAA6-1FAA8, U+1FAB5-1FAB6, U+1FABA, U+1FAD6, U+1FAE7;
+}
+
+:root {
+  --font-emoji: 'Campfire Emoji', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+}

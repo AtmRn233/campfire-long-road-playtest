@@ -157,30 +157,6 @@
   ],
   "female-hurt": [
     {
-      "code": "S2484",
-      "url": "./audio/voices/S2484.wav",
-      "offset": 0,
-      "duration": 0.287,
-      "license": "CC0-1.0",
-      "profile": "F01"
-    },
-    {
-      "code": "S2485",
-      "url": "./audio/voices/S2485.wav",
-      "offset": 0,
-      "duration": 0.384,
-      "license": "CC0-1.0",
-      "profile": "F01"
-    },
-    {
-      "code": "S2486",
-      "url": "./audio/voices/S2486.wav",
-      "offset": 0,
-      "duration": 0.322,
-      "license": "CC0-1.0",
-      "profile": "F01"
-    },
-    {
       "code": "S2487",
       "url": "./audio/voices/S2487.wav",
       "offset": 0.01614,
@@ -283,22 +259,6 @@
       "duration": 1.02,
       "license": "CC0-1.0",
       "profile": "F04"
-    },
-    {
-      "code": "S1201",
-      "url": "./audio/voices/S1201.wav",
-      "offset": 0.146,
-      "duration": 0.988,
-      "license": "CC-BY-3.0",
-      "profile": "F05"
-    },
-    {
-      "code": "S1202",
-      "url": "./audio/voices/S1202.wav",
-      "offset": 0.08056,
-      "duration": 1.432,
-      "license": "CC-BY-3.0",
-      "profile": "F05"
     }
   ],
   "female-death": [
@@ -323,14 +283,6 @@
       "url": "./audio/voices/S1373.wav",
       "offset": 0,
       "duration": 1.54,
-      "license": "CC0-1.0",
-      "profile": "F07"
-    },
-    {
-      "code": "S1374",
-      "url": "./audio/voices/S1374.wav",
-      "offset": 0.02714,
-      "duration": 4.853,
       "license": "CC0-1.0",
       "profile": "F07"
     }

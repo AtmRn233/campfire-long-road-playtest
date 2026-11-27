@@ -13,6 +13,7 @@ export function characterProfileTop(profile) {
       ["种族",profile.raceName || "—"],
       ["性别",profile.genderLabel || fallbackGender || "未填写"],
       ["职业",profile.profession || "—"],
+      ["相貌",profile.faceLabel || "—"],
       ["体型",profile.bodyLabel || "—"],
       ["出身",profile.originName || "未选择"],
       ["阵营",profile.factionLabel || "未设定"],
@@ -59,7 +60,7 @@ export function characterProfileData(unit) {
     ["特质",unit.traits?.join("、") || "无"], ["伤残","—"],
   ];
   const vitals = [
-    ["士气",unit.profileMorale ?? "—"], ["先攻",unit.initiative ?? "—"],
+    ["士气",unit.profileMorale ?? "—"], ["先攻",unit.initiative ?? "—","initiative"],
     ["伤害",unit.damage ?? "—","damage"], ["命中",unit.profileHit === undefined ? "—" : unit.profileHit + "%","hit"],
     ["格挡率",unit.meleeBlock === undefined ? "—" : Math.max(unit.meleeBlock,unit.rangedBlock ?? 0) + "%","block"],
     ["闪避率",unit.dodge === undefined ? "—" : unit.dodge + "%","dodge"],

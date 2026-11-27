@@ -11,7 +11,6 @@
     marsh: ['#879782', '#829782', '#889d88', '#899884'],
     steppe: ['#c2b18b', '#c3b68e', '#c5b592', '#c2b58c'],
     desert: ['#d9b980', '#dcbf8b', '#dbbb83', '#dfc08a'],
-    saltflat: ['#dbcfad', '#e1d5b5', '#dfd3b1', '#e1d6b8'],
     yard: ['#ad8d62','#b99a70','#b39367','#b19369'],
     cobble: ['#a49a86','#afa38f','#a99e89','#a99c85'],
     bank: ['#b5ac8b','#afa484','#aea07e','#b8ab85'],
@@ -27,7 +26,6 @@
     marsh: ['marsh', 'marsh-pool'],
     steppe: ['steppe-sparse'],
     desert: ['sand-ripples'],
-    saltflat: ['saltflat']
   };
   const ART_HEIGHT = { forest: 28, mountain: 28, desert: 9, steppe: 12 };
   const CAVE_COLORS = {
@@ -495,7 +493,7 @@
     ctx.restore();
   }
 
-  function paintRegionName(ctx, group, active = false) {
+  function paintRegionName(ctx, group) {
     if (!group?.cells.length) return;
     const { region, cells } = group;
     let target = region.label;
@@ -509,29 +507,18 @@
 
     ctx.save();
     const district = region.terrains.length === 0;
-    ctx.font = (active ? '800 29px' : district ? '800 19px' : '700 19px') + ' "Microsoft YaHei", sans-serif';
+    ctx.font = (district ? '800 19px' : '700 19px') + ' "Microsoft YaHei", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const width = Math.min(ctx.measureText(region.name).width, active ? 240 : 190);
-    const inset = width / 2 + (active ? 16 : 5);
+    const width = Math.min(ctx.measureText(region.name).width, 190);
+    const inset = width / 2 + 5;
     const x = Math.max(inset, Math.min((target[0] + .5) * CELL, WIDTH * CELL - inset));
     const y = (target[1] + .5) * CELL;
-    if (active) {
-      ctx.beginPath();
-      ctx.roundRect(x - width / 2 - 12, y - 20, width + 24, 40, 6);
-      ctx.fillStyle = '#fbecc6bb';
-      ctx.strokeStyle = '#886939dc';
-      ctx.lineWidth = 1.5;
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#533b23';
-    } else {
-      ctx.lineJoin = 'round';
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = '#eee4c4';
-      ctx.fillStyle = district ? '#64452d' : '#33301f';
-      ctx.strokeText(region.name, x, y, width);
-    }
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#eee4c4';
+    ctx.fillStyle = district ? '#64452d' : '#33301f';
+    ctx.strokeText(region.name, x, y, width);
     ctx.fillText(region.name, x, y, width);
     ctx.restore();
   }
@@ -573,12 +560,11 @@
     paintRegionHover(ctx, map, regionHoverCells(map, view.hoveredRegion));
     paintFrame(ctx, view.selected);
     for (const site of map.sites) paintSite(ctx, site, site.id === view.ghost?.id ? .35 : 1);
-    for (const [id, group] of regions) {
+    for (const group of regions.values()) {
       const townDistrict = map.kind === 'town' && !group.region.terrains.length;
-      if (id !== view.hoveredRegion && !townDistrict) paintRegionName(ctx, group);
+      if (!townDistrict) paintRegionName(ctx, group);
     }
     paintNames(ctx, map, view.labels, view.isKnown);
-    paintRegionName(ctx, regions.get(view.hoveredRegion), true);
     if (view.ghost) {
       paintFrame(ctx, view.ghost, !view.valid);
       paintSite(ctx, view.ghost, .82);

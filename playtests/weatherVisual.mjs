@@ -4,6 +4,16 @@ export function weatherVisualId(weather) {
   return weather;
 }
 
+export function weatherSkyMarkup(weather, animated = true) {
+  const sky = weather === "overcast" ? "cloudy" : weather;
+  if (sky !== "clear" && sky !== "cloudy" && sky !== "wind") return "";
+  const clouds = '<span class="weather-cloud-shadow fx-loop"></span>'.repeat(5);
+  const sunlight = sky === "clear"
+    ? '<div class="weather-sunlight fx-loop"><div class="weather-sunbeams"><span></span><span></span><span></span><span></span></div></div>'
+    : "";
+  return '<div class="weather-sky' + (animated ? ' moving' : '') + '" data-sky="' + sky + '" aria-hidden="true">' + clouds + sunlight + '</div>';
+}
+
 const particleCounts = {
   "light-rain": 28, "heavy-rain": 66, wind: 13, "light-snow": 35, "heavy-snow": 84,
 };

@@ -224,8 +224,6 @@
       "weatherWeights":{"clear":47,"overcast":16,"light-rain":7,"heavy-rain":2,"light-fog":2,"wind":14,"light-snow":2,"darkness":10}},
     {"id":"desert","name":"沙漠","front":5,"back":5,
       "weatherWeights":{"clear":64,"overcast":8,"light-rain":2,"heavy-rain":1,"wind":15,"darkness":10}},
-    {"id":"saltflat","name":"盐碱滩","front":5,"back":5,
-      "weatherWeights":{"clear":53,"overcast":13,"light-rain":4,"heavy-rain":1,"light-fog":3,"thick-fog":1,"wind":15,"darkness":10}},
     {"id":"village","name":"村镇","front":3,"back":3,
       "weatherWeights":{"clear":35,"overcast":27,"light-rain":12,"heavy-rain":4,"light-fog":7,"thick-fog":2,"wind":2,"light-snow":1,"darkness":10}},
     {"id":"tunnel","name":"地下矿井","indoors":true,"front":2,"back":2,

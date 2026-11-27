@@ -1,0 +1,100 @@
+Monster hit feedback — 14 kinds, one recording each. No monster death voices.
+Changes: trimmed leading/trailing silence, short excerpt up to 1.15 seconds, 4ms/40ms edge fades, peak normalized to 0.5, mono PCM16. No pitch changes. Original audition files remain unchanged.
+
+野兽 / S1493 / 兽类短哼
+Title: 80 CC0 creature SFX / barking_02
+Author: rubberduck
+Source: https://opengameart.org/content/80-cc0-creature-sfx
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/creatures-rubberduck-one/originals/barking_02.ogg; audition excerpt 0.02827–0.27969s
+
+类人生物 / S1447 / 短促痛哼
+Title: 15 monster grunt/pain/death sounds / paine
+Author: Michel Baradari
+Source: https://lpc.opengameart.org/content/15-monster-gruntpaindeath-sounds
+License: CC-BY-3.0 (licenses/CC-BY-3.0.txt)
+Original: sources/monsters-baradari/originals/monster/paine.wav; audition excerpt 0.00000–0.49181s
+
+怪兽 / S1445 / 粗哑受击
+Title: 15 monster grunt/pain/death sounds / painb
+Author: Michel Baradari
+Source: https://lpc.opengameart.org/content/15-monster-gruntpaindeath-sounds
+License: CC-BY-3.0 (licenses/CC-BY-3.0.txt)
+Original: sources/monsters-baradari/originals/monster/painb.wav; audition excerpt 0.00302–0.74417s
+
+异怪 / S1982 / 异质嘶声
+Title: 80 CC0 creature SFX / alien_02
+Author: rubberduck
+Source: https://opengameart.org/content/80-cc0-creature-sfx
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/creatures-rubberduck-one/originals/alien_02.ogg; audition excerpt 0.10946–0.59271s
+
+巨人 / S1629 / 低沉闷哼
+Title: RPG Sound Pack / giant3
+Author: artisticdude
+Source: https://lpc.opengameart.org/content/rpg-sound-pack
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/rpg-artisticdude/originals/RPG Sound Pack/NPC/giant/giant3.wav; audition excerpt 0.02552–0.44802s
+
+龙 / S1552 / 短促龙吼
+Title: Fantasy Sound Effects Library / Dragon_Growl_00
+Author: Little Robot Sound Factory
+Source: https://opengameart.org/content/fantasy-sound-effects-library
+License: CC-BY-3.0 (licenses/CC-BY-3.0.txt)
+Original: sources/fantasy-littlerobot/originals/Fantasy Sound Library/Wav/Dragon_Growl_00.wav; audition excerpt 0.02723–1.17723s
+
+不死生物 / S1936 / 沙哑低嚎
+Title: Zombies Sound Pack / zombie-15
+Author: artisticdude
+Source: https://lpc.opengameart.org/content/zombies-sound-pack
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/zombies/originals/zombies/zombie-15.wav; audition excerpt 0.04297–0.87499s
+
+构装生物 / S0664 / 金属震击
+Title: 100 CC0 metal and wood SFX / metal_hit_04
+Author: rubberduck
+Source: https://opengameart.org/content/100-cc0-metal-and-wood-sfx
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/metal-wood-rubberduck/originals/metal_hit_04.ogg; audition excerpt 0.01415–0.23027s
+
+元素生物 / S1146 / 元素碎响
+Title: Basic Spell Impacts [Free/CC0] / Ice Spell Impact 4
+Author: lentikula
+Source: https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/itch-spell-impacts/originals/Ice Spell Impacts/Ice Spell Impact 4.wav; audition excerpt 0.09052–1.04250s
+
+植物 / S0817 / 木质闷响
+Title: 100 CC0 metal and wood SFX / wood_hit_04
+Author: rubberduck
+Source: https://opengameart.org/content/100-cc0-metal-and-wood-sfx
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/metal-wood-rubberduck/originals/wood_hit_04.ogg; audition excerpt 0.00515–0.25988s
+
+泥怪 / S0696 / 黏液受击
+Title: RPG Sound Pack / slime7
+Author: artisticdude
+Source: https://lpc.opengameart.org/content/rpg-sound-pack
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/rpg-artisticdude/originals/RPG Sound Pack/NPC/slime/slime7.wav; audition excerpt 0.00082–0.33662s
+
+妖精 / S1504 / 轻短惊呼
+Title: 80 CC0 creature SFX / cute_03
+Author: rubberduck
+Source: https://opengameart.org/content/80-cc0-creature-sfx
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/creatures-rubberduck-one/originals/cute_03.ogg; audition excerpt 0.01735–0.61140s
+
+邪魔 / S1689 / 低哑震吼
+Title: Voices Sound Effects Library / Demon_03
+Author: Little Robot Sound Factory
+Source: https://opengameart.org/content/voices-sound-effects-library
+License: CC-BY-3.0 (licenses/CC-BY-3.0.txt)
+Original: sources/voices-littlerobot/originals/Wav/Demon/Demon_03.wav; audition excerpt 0.03725–1.18725s
+
+天界生物 / S1171 / 空灵震响
+Title: Healing Spell Impacts [Free/CC0] / Healing Spell Impact 9
+Author: lentikula
+Source: https://lentikula.itch.io/healing-spell-impacts
+License: CC0-1.0 (licenses/CC0-1.0.txt)
+Original: sources/itch-spell-heal/originals/Impacts/Healing Spell Impact 9.wav; audition excerpt 0.03567–1.07348s

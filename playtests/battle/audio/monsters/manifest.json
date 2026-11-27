@@ -1,0 +1,128 @@
+{
+  "野兽": {
+    "name": "monster-beast-hit",
+    "code": "S1493",
+    "url": "./audio/monsters/S1493.wav",
+    "offset": 0,
+    "duration": 0.25142,
+    "volume": 0.62,
+    "license": "CC0-1.0"
+  },
+  "类人生物": {
+    "name": "monster-humanoid-hit",
+    "code": "S1447",
+    "url": "./audio/monsters/S1447.wav",
+    "offset": 0,
+    "duration": 0.49181,
+    "volume": 0.62,
+    "license": "CC-BY-3.0"
+  },
+  "怪兽": {
+    "name": "monster-monstrosity-hit",
+    "code": "S1445",
+    "url": "./audio/monsters/S1445.wav",
+    "offset": 0,
+    "duration": 0.74116,
+    "volume": 0.62,
+    "license": "CC-BY-3.0"
+  },
+  "异怪": {
+    "name": "monster-aberration-hit",
+    "code": "S1982",
+    "url": "./audio/monsters/S1982.wav",
+    "offset": 0,
+    "duration": 0.48325,
+    "volume": 0.62,
+    "license": "CC0-1.0"
+  },
+  "巨人": {
+    "name": "monster-giant-hit",
+    "code": "S1629",
+    "url": "./audio/monsters/S1629.wav",
+    "offset": 0,
+    "duration": 0.4225,
+    "volume": 0.62,
+    "license": "CC0-1.0"
+  },
+  "龙": {
+    "name": "monster-dragon-hit",
+    "code": "S1552",
+    "url": "./audio/monsters/S1552.wav",
+    "offset": 0,
+    "duration": 1.15,
+    "volume": 0.62,
+    "license": "CC-BY-3.0"
+  },
+  "不死生物": {
+    "name": "monster-undead-hit",
+    "code": "S1936",
+    "url": "./audio/monsters/S1936.wav",
+    "offset": 0,
+    "duration": 0.83202,
+    "volume": 0.62,
+    "license": "CC0-1.0"
+  },
+  "构装生物": {
+    "name": "monster-construct-hit",
+    "code": "S0664",
+    "url": "./audio/monsters/S0664.wav",
+    "offset": 0,
+    "duration": 0.21613,
+    "volume": 0.62,
+    "license": "CC0-1.0"
+  },
+  "元素生物": {
+    "name": "monster-elemental-hit",
+    "code": "S1146",
+    "url": "./audio/monsters/S1146.wav",
+    "offset": 0,
+    "duration": 0.95198,
+    "volume": 0.62,
+    "license": "CC0-1.0"
+  },
+  "植物": {
+    "name": "monster-plant-hit",
+    "code": "S0817",
+    "url": "./audio/monsters/S0817.wav",
+    "offset": 0,
+    "duration": 0.25473,
+    "volume": 0.62,
+    "license": "CC0-1.0"
+  },
+  "泥怪": {
+    "name": "monster-ooze-hit",
+    "code": "S0696",
+    "url": "./audio/monsters/S0696.wav",
+    "offset": 0,
+    "duration": 0.3358,
+    "volume": 0.62,
+    "license": "CC0-1.0"
+  },
+  "妖精": {
+    "name": "monster-fey-hit",
+    "code": "S1504",
+    "url": "./audio/monsters/S1504.wav",
+    "offset": 0,
+    "duration": 0.59404,
+    "volume": 0.62,
+    "license": "CC0-1.0"
+  },
+  "邪魔": {
+    "name": "monster-fiend-hit",
+    "code": "S1689",
+    "url": "./audio/monsters/S1689.wav",
+    "offset": 0,
+    "duration": 1.15,
+    "volume": 0.62,
+    "license": "CC-BY-3.0"
+  },
+  "天界生物": {
+    "name": "monster-celestial-hit",
+    "code": "S1171",
+    "url": "./audio/monsters/S1171.wav",
+    "offset": 0,
+    "duration": 1.03781,
+    "volume": 0.62,
+    "license": "CC0-1.0"
+  }
+}

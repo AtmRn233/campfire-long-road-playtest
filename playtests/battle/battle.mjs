@@ -6,6 +6,7 @@ import basicWeapons from "../../data/rules/basic-weapons.json" with { type: "jso
 import { createDialogue } from "./dialogue.mjs";
 import { battleItemCount, battleItemSlots, battleItemsBySlot, battleLoad, carryKgPerStrength } from "./loadout.mjs";
 import { adjacent, fieldRanks, fieldSideOf, rankOf } from "./grid.mjs";
+import { attributeBenchmark } from "./attributes.mjs";
 import { canFight, heavyWoundRatio, isHeavilyWounded, moraleLimit,
   settleMorale, startMorale, whiteFlag } from "./morale.mjs";
 
@@ -28,19 +29,10 @@ const roster = [
   {id:"herman", name:"赫尔曼", role:"骑兵", side:"enemy", weapon:"矛", body:"链甲", head:"锅盔", row:"back", mount:"horse",
     additionalGear:[{slot:"wrists",label:"手腕",name:"手套"},{slot:"feet",label:"鞋子",name:"长靴"}]},
 ];
-const backgrounds = {
-  roland:"罗兰曾在山口替商队守夜。旧领主解散卫队后，他带着一把长剑投了佣兵团，仍习惯走在队伍最前面。",
-  milo:"米洛是林边村的木匠之子。镇上征召时，他领到一根长矛，后来又用两个月的饷钱给自己换了面圆盾。",
-  vera:"薇拉跟猎人学会在细雨里认足迹、在风里放箭。商路断了以后，她开始替佣兵团探路。",
-  garrick:"加里克原是守山路的哨兵，后来带几个老伙计离了岗。他熟知鸦岭每条小径，通常让最沉得住气的人守后面。",
-  bren:"布伦早年替河边的伐木场干活，手斧从那时就跟着他。他替加里克守前排，最擅长在狭窄的地方顶住人。",
-  oswin:"奥斯温替边境守过多年城门，对弩弦的响声比对号令还熟。他绕到林间高处，找能看清阵线的位置。",
-  herman:"赫尔曼曾是边境驿站的骑递，熟悉哪条林路能让马通过。驿站撤裁后，他带着留下的战马和旧矛加入了加里克的队伍。",
-};
-
-const sideUnits = (state, side) => state.units.filter((unit) => unit.side === side && unit.hp > 0);
-const active = (unit) => unit.hp > 0 && unit.row !== "reserve";
-const occupancy = (state, side, row) => state.units.filter(unit=>unit.hp>0 && fieldSideOf(unit)===side && unit.row===row);
+const available = (unit) => unit.hp > 0 && !unit.arenaWithdrawn;
+const sideUnits = (state, side) => state.units.filter((unit) => unit.side === side && available(unit));
+const active = (unit) => available(unit) && unit.row !== "reserve";
+const occupancy = (state, side, row) => state.units.filter(unit=>available(unit) && fieldSideOf(unit)===side && unit.row===row);
 const columnOrder = [0,1,-1,2,-2];
 const lanes = columnOrder.toSorted((a,b)=>a-b);
 const deploymentRows = ["front","back","reserve"];
@@ -54,10 +46,10 @@ const order = (a, b) => a.position - b.position;
 const figure = (part) => {
   const gear = typeof part === "string" ? catalog.armor[part] : part;
   const max = Math.round(gear?.durability ?? 0);
-  return {name:gear?.name ?? "无",impactKind:gear?.impactKind,max,current:Math.max(0,Math.min(max,gear?.current ?? max)),attributeCap:gear?.attributeCap,blockBonus:gear?.blockBonus,initiative:gear?.initiative};
+  return {name:gear?.name ?? "无",impactKind:gear?.impactKind,max,current:Math.max(0,Math.min(max,gear?.current ?? max)),attributeCap:gear?.attributeCap,blockBonus:gear?.blockBonus,initiative:gear?.initiative,campaignGear:gear?.campaignGear};
 };
 const attributeNames = ["strength","dexterity","constitution","intelligence","perception","charisma"];
-const baseAttribute = 8;
+const defaultAttribute = 8;
 const baseAccuracy = 70;
 const hitFloor = 5;
 const hitCeiling = 95;
@@ -65,22 +57,32 @@ const baseHeadChance = 10;
 const baseBlock = 10;
 const bubbleDuration = 1000;
 const moralePercent = (unit) => Math.max(-moraleLimit,unit.morale) * 5;
-const strengthDamagePercent = (unit) => (unit.attributes.strength-baseAttribute) * 2;
-const isMeleeFighter = (unit) => canFight(unit) && unit.weapon.range !== "远程";
+const strengthDamagePercent = (unit) => (unit.attributes.strength-attributeBenchmark) * 2;
+const hasAttack = (unit) => !unit.monster || unit.monster.hit !== undefined;
+const damageUsesStrength = (unit) => !unit.monster && !unit.weapon.magic;
+const isMeleeFighter = (unit) => canFight(unit) && hasAttack(unit) && unit.weapon.range !== "远程";
 
 export function effectiveAttribute(unit,attribute) {
   const raw = unit.attributes[attribute];
   if (attribute !== "dexterity" && attribute !== "intelligence") return raw;
   const cap = Math.min(...Object.values(unit.armor).map(gear=>gear.attributeCap ?? Infinity));
-  return Math.min(raw,baseAttribute+cap);
+  return Math.min(raw,attributeBenchmark+cap);
+}
+
+function initiativeParts(unit) {
+  if (unit.monster) return [["怪物先攻",unit.monster.initiative,true]];
+  const dexterity = effectiveAttribute(unit,"dexterity");
+  const equipment = [["主手",unit.weapon],["头盔",unit.armor.head],["护甲",unit.armor.body],["盾牌",unit.shield]];
+  return [
+    ["敏捷（" + dexterity + " − " + attributeBenchmark + "）",dexterity - attributeBenchmark,true],
+    ...equipment.filter(([,gear])=>gear?.initiative).map(([slot,gear])=>[slot + " · " + gear.name,gear.initiative]),
+  ];
 }
 
 function updateHandStats(unit) {
-  const equipmentInitiative = [unit.weapon,unit.armor.head,unit.armor.body,unit.shield]
-    .reduce((total,gear) => total+(gear?.initiative ?? 0),0);
-  unit.initiative = effectiveAttribute(unit,"dexterity") - baseAttribute + equipmentInitiative;
-  unit.damage = unit.weapon.magic ? unit.weapon.damage :
-    Math.round(unit.weapon.damage * (100 + strengthDamagePercent(unit)) / 100);
+  unit.initiative = initiativeParts(unit).reduce((total,[,amount])=>total+amount,0);
+  unit.damage = damageUsesStrength(unit) ?
+    Math.round(unit.weapon.damage * (100 + strengthDamagePercent(unit)) / 100) : unit.weapon.damage;
 }
 
 function applyStartingAttributes(unit) {
@@ -90,7 +92,7 @@ function applyStartingAttributes(unit) {
   unit.hp = unit.maxHp;
   unit.maxMagic = effectiveAttribute(unit,"intelligence") * 5;
   unit.magic = unit.profession === "法师" ? {current:unit.maxMagic,max:unit.maxMagic} : null;
-  unit.discount = (charisma - baseAttribute) * 2;
+  unit.discount = (charisma - attributeBenchmark) * 2;
 }
 
 function updateStamina(unit) {
@@ -141,7 +143,7 @@ function controllers(state,actor) {
 }
 
 export function retreatProblem(state,actor) {
-  if (!active(actor)) return "";
+  if (!active(actor) || actor.monster?.fly) return "";
   const opponent = controllers(state,actor).find(unit=>adjacent(actor,unit));
   return opponent ? "位于"+opponent.name+"的控制区内，无法移动或撤退。" : "";
 }
@@ -151,10 +153,10 @@ export function movementOptions(state,actor) {
   if (actor.moved) return {destinations:[],blockedReason:"该角色本次行动已经移动，仍可攻击或采取其他行动。"};
   const blockedReason = retreatProblem(state,actor);
   if (blockedReason) return {destinations:[],blockedReason};
-  const enemies = controllers(state,actor);
+  const enemies = actor.monster?.fly ? [] : controllers(state,actor);
   const occupied = new Set(state.units.filter(active).map(unit=>rankOf(unit)+":"+unit.column));
   const destinations = [];
-  const maxSteps = actor.mount?.current > 0 ? 2 : 1;
+  const maxSteps = actor.monster?.speed ?? (actor.mount?.current > 0 ? 2 : 1);
   let frontier = [{rank:rankOf(actor),column:actor.column}];
   for (let step=0; step<maxSteps && frontier.length; step++) {
     const next = [];
@@ -273,26 +275,28 @@ function assignTerrain(state, terrainId) {
 
 export function createBattleUnit(character, position = 0) {
   const weapon = typeof character.weapon === "string" ? catalog.weapons[character.weapon] : character.weapon;
+  const defaultWeapon = character.monster ? {name:"无基础攻击",range:"短",damage:0,penetration:0} : catalog.weapons.徒手;
   const mount = catalog.mounts[character.mount];
   const unit = {
     id:character.id, name:character.name, role:character.role, side:character.side,
     ...(character.noncombatant ? {noncombatant:true} : {}),
+    ...(character.monster ? {monster:character.monster,attacksMade:0} : {}),
     level:character.level ?? 1, raceName:character.raceName, size:character.size ?? "中型", profession:character.profession ?? character.role,
-    gender:character.gender, genderLabel:character.genderLabel, bodyLabel:character.bodyLabel,
+    gender:character.gender, genderLabel:character.genderLabel, faceLabel:character.faceLabel, bodyLabel:character.bodyLabel,
     factionLabel:character.factionLabel, experience:character.experience,
     originName:character.originName, traits:character.traits ?? [], attributeSources:character.attributeSources,
     levelPoints:character.levelPoints, additionalGear:character.additionalGear ?? [],
     items:character.items ?? [], handItems:{...character.handItems}, lockedHands:character.lockedHands ?? [],
     skills:[...(character.skills ?? [])],
-    bio:character.bio ?? backgrounds[character.id], portrait:character.portrait, profilePortrait:character.profilePortrait,
+    portrait:character.portrait, profilePortrait:character.profilePortrait,
     portraitSprite:character.portraitSprite,
     portraitCropKey:character.portraitCropKey, portraitFraming:character.portraitFraming, portraitVersion:character.portraitVersion,
     profileResistances:character.profileResistances,
     preferred:character.row, position, row:character.row, acted:false, moved:false, statuses:{}, morale:0,
-    attributes:Object.fromEntries(attributeNames.map(name=>[name,character.attributes?.[name] ?? baseAttribute])),
+    attributes:Object.fromEntries(attributeNames.map(name=>[name,character.attributes?.[name] ?? defaultAttribute])),
     dialogue:createDialogue(character.presetId ?? character.id),
     voiceProfile:character.gender === "female" || (character.presetId ?? character.id) === "vera" ? "female" : undefined,
-    weapon:{headBonus:0,armorBonus:0,shieldBonus:0,...(weapon ?? catalog.weapons.徒手)},
+    weapon:{headBonus:0,armorBonus:0,shieldBonus:0,...(weapon ?? defaultWeapon)},
     armor:{head:figure(character.head),body:figure(character.body)},
     shield:character.shield ? figure(character.shield) : null,
     mount:mount ? {
@@ -355,7 +359,7 @@ function teamAmmoCost(state,actor) {
 
 export function attackOptions(state, actorId) {
   const actor = state.units.find((unit) => unit.id === actorId);
-  if (!actor || !active(actor)) return {targets:[]};
+  if (!actor || !active(actor) || !hasAttack(actor)) return {targets:[]};
   const cost = teamAmmoCost(state,actor);
   if (cost && state.ammoLeft < cost) return {targets:[],
     blockedReason:cost === 1 ? "队伍弹药不足" : "队伍弹药不足，需要 " + cost + " 单位"};
@@ -432,8 +436,8 @@ function enterFromReserve(state,unit,row,column) {
   recordMorale(state,{reinforced:unit});
 }
 
-function reinforceEnemy(state) {
-  const {units,columns} = reinforcementOptions(state,"enemy");
+function reinforceSide(state,side) {
+  const {units,columns} = reinforcementOptions(state,side);
   for (const id of units) {
     const unit = state.units.find(entry=>entry.id===id);
     if (unit.morale === whiteFlag || isHeavilyWounded(unit)) continue;
@@ -442,41 +446,73 @@ function reinforceEnemy(state) {
   }
 }
 
-function settlementEntry(unit,kind) {
-  const {id,name,side,role,profession,portrait,weapon,armor,shield,mount,magic,stamina,morale,level,hp,maxHp,acted} = unit;
-  const items = [{name:weapon.name,kind:"武器"}];
-  for (const [type,gear] of [["头盔",armor.head],["护甲",armor.body],["盾牌",shield]]) {
-    if (gear?.current > 0) items.push({name:gear.name,kind:type,current:gear.current,max:gear.max});
+function settlementEntry(unit,kind,persistent = false) {
+  const {id,name,side,role,profession,portrait,profilePortrait,portraitSprite,portraitCropKey,portraitFraming,portraitVersion,
+    weapon,armor,shield,mount,magic,stamina,morale,level,hp,maxHp} = unit;
+  const monster = Boolean(unit.monster);
+  const protection = [["head","头盔",armor.head],["body","护甲",armor.body],["off_hand","盾牌",shield]];
+  const source = slot => persistent ? {source:{unit:id,slot}} : {};
+  const items = [];
+  if (!monster) {
+    if (!persistent || weapon.campaignGear) items.push({name:weapon.name,kind:"武器",...source("main_hand")});
+    for (const [slot,type,gear] of protection) {
+      if (gear?.current > 0 && (!persistent || gear.campaignGear)) {
+        items.push({name:gear.name,kind:type,current:gear.current,max:gear.max,...source(slot)});
+      }
+    }
   }
   return {
-    kind,card:structuredClone({id,name,side,role,profession,portrait,armor,shield,mount,magic,stamina,morale,level,hp,maxHp,acted}),
-    items,looted:false,disposition:null,
+    kind,card:structuredClone({id,name,side,role,profession,portrait,profilePortrait,portraitSprite,portraitCropKey,
+      portraitFraming,portraitVersion,armor,shield,mount,magic,stamina,morale,level,hp,maxHp}),
+    monster,items,looted:false,disposition:null,capturable:!monster,
+    ...(persistent ? {
+      durability:Object.fromEntries(protection.filter(([, , gear])=>gear?.max > 0).map(([slot, , gear])=>[slot,gear.current]))} : {}),
   };
 }
 
+export function pendingCorpseAction(entry) {
+  if (entry?.kind !== "corpse" || entry.looted || entry.disposition) return;
+  return entry.monster ? "butcher" : "loot";
+}
+
+export const settlementItemKey = item => JSON.stringify([item.kind,item.name,item.current,item.max,
+  ...(item.source ? [item.source.unit,item.source.slot] : []),...(item.harvested ? ["harvested"] : [])]);
+
 function stackItem(items,item,quantity=1) {
-  const existing = items.find(slot=>slot.name===item.name && slot.kind===item.kind &&
-    slot.current===item.current && slot.max===item.max);
+  const key = settlementItemKey(item);
+  const existing = items.find(slot=>settlementItemKey(slot)===key);
   if (existing) existing.quantity += quantity;
   else items.push({...item,quantity});
 }
 
-function settlementProblem(entry,command) {
+export function settlementProblem(entry,command) {
   if (entry.disposition) return "该对象已处理";
-  if (command === "loot") {
-    if (entry.kind !== "corpse") return "只能搜刮阵亡者";
+  if (command === "loot" || command === "butcher") {
     if (entry.looted) return "已搜刮过该对象";
+    if ((command === "butcher") !== entry.monster) return entry.monster ? "怪物只能屠宰" : "此对象只能搜刮";
   } else if (entry.kind !== "prisoner") {
     return "只能对俘虏执行此操作";
   }
+  if (command === "execute" && entry.monster) return "怪物只能屠宰";
+  if (command === "recruit" && entry.capturable === false) return "此对象无法带走";
   return "";
 }
 
-function settle(state,{command,target,all}) {
+function settle(state,{command,target,all},roll) {
   const settlement = state.settlement;
   if (!settlement) throw new Error("战斗胜利后才能结算");
   if (settlement.left) throw new Error("队伍已经离开战场");
   const {entries,loot,inventory} = settlement;
+  const harvest = [];
+  const processEntry = (entry,kind) => {
+    const result = settleEntry(state,entry,loot,kind,roll);
+    if (result) {
+      const check = {...result,target:entry.card.name};
+      harvest.push(check);
+      (settlement.harvestChecks ??= []).push(check);
+      settlement.lastHarvest = harvest;
+    }
+  };
   if (command === "leave") {
     loot.length = 0;
     settlement.left = true;
@@ -490,18 +526,25 @@ function settle(state,{command,target,all}) {
     return;
   }
   if (command === "return") {
-    const index = inventory.findIndex(item=>JSON.stringify([item.kind,item.name,item.current,item.max])===target);
+    const index = inventory.findIndex(item=>settlementItemKey(item)===target);
     if (index < 0) throw new Error("这件物品已不在队伍物资中");
     const [{quantity,...item}] = inventory.splice(index,1);
     stackItem(loot,{...item,id:++state.serial},quantity);
     return;
   }
-  if (command === "talk") throw new Error("对话暂未开放");
-  if (!["loot","execute","recruit"].includes(command)) throw new Error("未知结算操作");
-  if (all === true) {
-    if (command === "recruit") throw new Error("请选择一名俘虏招降");
+  if (command === "process" && all === true) {
     for (const entry of entries) {
-      if (!settlementProblem(entry,command)) settleEntry(state,entry,loot,command);
+      const pending = pendingCorpseAction(entry);
+      if (pending) processEntry(entry,pending);
+    }
+    return;
+  }
+  if (command === "talk") throw new Error("对话暂未开放");
+  if (!["loot","butcher","execute","recruit"].includes(command)) throw new Error("未知结算操作");
+  if (all === true) {
+    if (command === "recruit") throw new Error("请选择一名要收押的俘虏");
+    for (const entry of entries) {
+      if (!settlementProblem(entry,command)) processEntry(entry,command);
     }
     return;
   }
@@ -509,10 +552,10 @@ function settle(state,{command,target,all}) {
   if (!entry) throw new Error("找不到结算对象");
   const problem = settlementProblem(entry,command);
   if (problem) throw new Error(problem);
-  settleEntry(state,entry,loot,command);
+  processEntry(entry,command);
 }
 
-function settleEntry(state,entry,loot,command) {
+function settleEntry(state,entry,loot,command,roll) {
   if (command === "loot") {
     for (const item of entry.items) stackItem(loot,{...item,id:++state.serial});
     const {armor,shield} = entry.card;
@@ -522,29 +565,52 @@ function settleEntry(state,entry,loot,command) {
     entry.looted = true;
   } else {
     entry.disposition = command;
-    if (command === "execute") entry.card.hp = 0;
+    if (command === "execute" || command === "butcher") entry.card.hp = 0;
+    if (command === "butcher" && state.encounter?.wildMonster) return harvestMonster(state,loot,roll);
   }
+}
+
+function harvestMonster(state,loot,roll) {
+  const rules = state.encounter.butchery;
+  if (!rules) return {drops:[]};
+  const bonuses = state.units.filter(unit=>unit.side === "player" && unit.hp > 0 && Object.hasOwn(rules.bonuses,unit.id))
+    .map(unit=>rules.bonuses[unit.id]);
+  if (!bonuses.length) return {drops:[]};
+  const bonus = Math.max(...bonuses);
+  const rolled = Math.floor(roll()*rules.sides)+1;
+  const score = bonus + rolled;
+  const tier = rules.tiers.find(tier=>score >= tier.score);
+  const drops = [];
+  for (const {item:name,quantity,kind = "材料"} of rules.drops) {
+    const qty = Math.floor(quantity*tier.percent/100);
+    if (qty <= 0) continue;
+    stackItem(loot,{name,kind,harvested:true,id:++state.serial},qty);
+    drops.push({name,qty});
+  }
+  const difficulty = Number.isFinite(tier.score) ? tier.score : rules.tiers.at(-2)?.score;
+  return {score,tier:tier.name,drops,check:{sides:rules.sides,rolled,bonus,difficulty}};
 }
 
 function finishBattle(state,side,reason) {
   state.winner = other(side);
   state.phase = "ended";
+  if (state.autoBattle) state.autoBattle = false;
   state.endReason = reason;
   state.report = Object.entries(state.damageStats).map(([id,stats])=>({
     id,portrait:(state.units.find(unit=>unit.id===id) ?? state.fallen.find(entry=>entry.card.id===id)?.card)?.portrait,
     ...stats,fallen:state.fallen.some(entry=>entry.card.id===id),
   })).sort((a,b)=>(b.armor+b.hp)-(a.armor+a.hp));
-  if (state.winner === "player") {
-    const prisoners = reason === "surrender" ? sideUnits(state,side).map(unit=>settlementEntry(unit,"prisoner")) : [];
+  if (state.winner === "player" && !state.encounter?.arena) {
+    const prisoners = reason === "surrender" ? sideUnits(state,side).map(unit=>settlementEntry(unit,"prisoner",state.encounter?.persistentSpoils)) : [];
     state.settlement = {entries:[...state.fallen,...prisoners],loot:[],inventory:state.supplies,left:false};
   }
   const loser = side === "player" ? "我方" : "敌方";
-  const result = {surrender:"全队举起白旗，溃败。",elimination:"全员阵亡。",withdrawal:"撤离战场。"};
+  const result = {surrender:"全队举起白旗，溃败。",elimination:"全员阵亡。",withdrawal:"撤离战场。",arenaWithdrawal:"全员退出竞技。"};
   note(state,loser+result[reason]);
 }
 
 function startNextRound(state) {
-  reinforceEnemy(state);
+  reinforceSide(state,"enemy");
   if (resolveDefeat(state)) return false;
   const emptySide = ["player","enemy"].find(side=>!sideUnits(state,side).some(active));
   if (emptySide) {
@@ -552,7 +618,11 @@ function startNextRound(state) {
     return false;
   }
   state.round++;
-  for (const unit of state.units) Object.assign(unit,{acted:false,moved:false});
+  for (const unit of state.units) {
+    Object.assign(unit,{acted:false,moved:false});
+    delete unit.statuses.surprised;
+  }
+  for (const unit of state.units) if (unit.monster) unit.attacksMade = 0;
   note(state,"第 " + state.round + " 回合开始。");
   return true;
 }
@@ -560,6 +630,10 @@ function startNextRound(state) {
 function resolveDefeat(state) {
   for (const side of ["player","enemy"]) {
     const survivors = sideUnits(state,side);
+    if (state.encounter?.arena?.withdrawBelow && !survivors.length) {
+      finishBattle(state,side,"arenaWithdrawal");
+      return true;
+    }
     const field = survivors.filter(active);
     if (!survivors.some(unit=>unit.morale!==whiteFlag) || (field.length && !field.some(canFight))) {
       finishBattle(state,side,survivors.length ? "surrender" : "elimination");
@@ -586,6 +660,11 @@ function advance(state) {
       }
       if (!startNextRound(state)) return;
       next = orderedActors(state)[0];
+    }
+    if (next.statuses.surprised > 0) {
+      next.acted = true;
+      note(state,next.name + "措手不及，跳过本轮行动。","info","",{actorId:next.id});
+      continue;
     }
     for (const [id,turns] of Object.entries(next.statuses)) {
       if (turns <= 1) delete next.statuses[id];
@@ -629,16 +708,17 @@ export function defenseFor(unit) {
   const targetDexterity = effectiveAttribute(unit,"dexterity");
   const rawTargetDexterity = unit.attributes.dexterity;
   const shield = intactShield(unit);
-  const attributeDodge = Math.max(0,(targetDexterity-baseAttribute)*2);
+  const attributeDodge = unit.monster?.evade ?? Math.max(0,(targetDexterity-attributeBenchmark)*2);
   const moraleDodge = moralePercent(unit);
   const baseDodge = Math.max(0,attributeDodge + moraleDodge);
   const activeDodge = unit.statuses.dodge > 0 ? dodgeAfterAction(baseDodge)-baseDodge : 0;
   const shieldBonus = shield?.blockBonus ?? 0;
   const guarding = unit.statuses.defend > 0;
   const block = (baseBlock + shieldBonus) * (guarding ? 2 : 1);
-  const meleeBlock = unit.weapon.range === "远程" ? 0 : block;
+  const meleeBlock = !hasAttack(unit) || unit.weapon.range === "远程" ? 0 : block;
   const rangedBlock = shield ? block : 0;
   return {targetDexterity,rawTargetDexterity,attributeDodge,baseDodge,moraleDodge,activeDodge,baseBlock,shieldBonus,guarding,meleeBlock,rangedBlock,
+    ...(unit.monster ? {dodgeSource:"目标基础闪避"} : {}),
     dodge:baseDodge + activeDodge};
 }
 
@@ -662,22 +742,23 @@ export function accuracyFor(actor, target, weather, state, skill) {
   const attackAttribute = ranged ? "dexterity" : "strength";
   const rawScore = actor.attributes[attackAttribute];
   const score = effectiveAttribute(actor,attackAttribute);
-  const adjustment = (score - baseAttribute) * 2;
+  const base = actor.monster ? actor.monster.hit ?? 0 : baseAccuracy;
+  const adjustment = actor.monster ? 0 : (score - attributeBenchmark) * 2;
   const weaponMatchup = actor.weapon.range === "长" && target.weapon.range === "短" ? 5 : 0;
   const targetSize = target.mount?.current > 0 ? target.mount.size : target.size;
-  const largeBonus = actor.weapon.range === "长" && targetSize === "大型" ? Math.round((actor.weapon.largeBonus ?? 0)*100) : 0;
+  const largeBonus = (actor.monster || actor.weapon.range === "长") && targetSize === "大型" ? Math.round((actor.weapon.largeBonus ?? 0)*100) : 0;
   const flankingHit = flankingBonus(state,actor,target);
   const moraleHit = moralePercent(actor);
   const weatherHit = (actor.weapon.magic ? weather?.magicHit : ranged ? weather?.rangedHit : 0) ?? 0;
   const defense = defenseFor(target);
   const block = ranged ? defense.rangedBlock : defense.meleeBlock;
   const skillHit = skill?.hit ?? 0;
-  const offense = baseAccuracy + adjustment + weaponMatchup + largeBonus + flankingHit + moraleHit + weatherHit + skillHit;
+  const offense = base + adjustment + weaponMatchup + largeBonus + flankingHit + moraleHit + weatherHit + skillHit;
   const afterDodge = offense - defense.dodge;
   const chance = limitHit(afterDodge - block);
   const dodgeLimit = limitHit(Math.max(offense,afterDodge));
   const blockLimit = Math.max(chance,dodgeLimit - Math.max(0,defense.dodge));
-  return {base:baseAccuracy, attribute:ranged ? "敏捷" : "力量", score, rawScore, adjustment, weaponMatchup, largeBonus, flankingHit, moraleHit,
+  return {base, attribute:ranged ? "敏捷" : "力量", score, rawScore, adjustment, weaponMatchup, largeBonus, flankingHit, moraleHit,
     weatherHit, weatherName:weather?.name ?? null, ...defense, block, skillHit, chance, blockLimit, dodgeLimit};
 }
 
@@ -686,14 +767,15 @@ export function battleProfileCombat(unit, weather) {
   const profileHit = a.base + a.adjustment + a.moraleHit + a.weatherHit;
   const block = Math.max(a.meleeBlock,a.rangedBlock);
   const activeBlock = a.guarding ? a.baseBlock + a.shieldBonus : 0;
-  const rawDodge = Math.max(0,(a.rawTargetDexterity-baseAttribute)*2);
-  const strength = unit.weapon.magic ? 0 : strengthDamagePercent(unit);
+  const rawDodge = unit.monster?.evade ?? Math.max(0,(a.rawTargetDexterity-attributeBenchmark)*2);
+  const strength = damageUsesStrength(unit) ? strengthDamagePercent(unit) : 0;
   const signed = (value,unit) => (value > 0 ? "+" : "") + value + unit;
   const contributions = (entries,suffix="%") => entries.filter(([,value,required])=>value || required)
     .sort((a,b)=>b[1]-a[1]).map(([label,value])=>[label,signed(value,suffix)]);
   return {
     dodge:a.dodge, meleeBlock:a.meleeBlock, rangedBlock:a.rangedBlock, profileHit,
     profileStatSources:{
+      initiative:{title:"先攻来源",rows:contributions(initiativeParts(unit),""),total:"合计先攻 " + unit.initiative},
       block:{title:"格挡来源",rows:contributions([
         ["基础格挡",a.baseBlock,true],["盾牌 · " + (unit.shield?.name ?? "无"),a.shieldBonus],
         ["主动防御",activeBlock],["武器与盾牌格挡限制",block-a.baseBlock-a.shieldBonus-activeBlock],
@@ -702,19 +784,19 @@ export function battleProfileCombat(unit, weather) {
         (unit.weapon.range === "远程" ? "；持远程武器不能格挡近战" : "") +
         (!intactShield(unit) ? "；无完好盾牌不能格挡远程" : "")},
       dodge:{title:"闪避来源",rows:contributions([
-        ["敏捷（" + a.rawTargetDexterity + "）",rawDodge,true],
+        [unit.monster ? "基础闪避" : "敏捷（" + a.rawTargetDexterity + "）",rawDodge,true],
         ["装备敏捷上限（有效敏捷 " + a.targetDexterity + "）",a.attributeDodge-rawDodge],
         ["士气",a.moraleDodge],["总闪避最低 0%",a.baseDodge-a.attributeDodge-a.moraleDodge],
         ["主动闪避",a.activeDodge],
       ]),total:"合计闪避率 " + a.dodge + "%"},
       damage:{title:"伤害来源",rows:[
         ["武器 · " + unit.weapon.name,String(unit.weapon.damage)],
-        ...(unit.weapon.magic ? [] : [["力量 " + unit.attributes.strength + "（" + signed(strength,"%") + "）",
-          signed(unit.damage-unit.weapon.damage,"")]]),
+        ...(damageUsesStrength(unit) ? [["力量 " + unit.attributes.strength + "（" + signed(strength,"%") + "）",
+          signed(unit.damage-unit.weapon.damage,"")]] : []),
       ],total:"实际攻击伤害 " + unit.damage,
       note:"命中后按目标和命中部位结算，护甲、格挡等会影响最终扣血。"},
       hit:{title:"命中来源",rows:contributions([
-        ["基础命中",a.base,true],[a.attribute + "（" + a.score + "）",a.adjustment,true],
+        ["基础命中",a.base,true],[a.attribute + "（" + a.score + "）",a.adjustment,!unit.monster],
         ["士气",a.moraleHit],["天气" + (a.weatherName ? " · " + a.weatherName : ""),a.weatherHit],
       ]),total:"合计命中 " + profileHit + "%",
       note:"对具体目标的命中率还受其闪避、格挡及战场情况影响。"},
@@ -856,8 +938,8 @@ function attack(state, actor, target, roll, skill) {
   const outcome = hit ? "hit" : rolled <= accuracy.blockLimit ? "block" : rolled <= accuracy.dodgeLimit ? "dodge" : "miss";
   const largeBonus = accuracy.largeBonus;
   const damageCheck = {
-    weaponDamage:actor.weapon.damage, strength:actor.weapon.magic ? null : actor.attributes.strength,
-    strengthPercent:actor.weapon.magic ? 0 : strengthDamagePercent(actor), adjustedDamage:actor.damage,
+    weaponDamage:actor.weapon.damage, strength:damageUsesStrength(actor) ? actor.attributes.strength : null,
+    strengthPercent:damageUsesStrength(actor) ? strengthDamagePercent(actor) : 0, adjustedDamage:actor.damage,
     largeBonus, attack:Math.round(actor.damage*(100+largeBonus)/100),
   };
   const detail = {
@@ -903,6 +985,11 @@ function attack(state, actor, target, roll, skill) {
   const hpBefore = target.hp;
   const strikeDamage = damageCheck.attack;
   const result = resolveStrike(target,strikeDamage,zone,actor.weapon.penetration,actor.weapon.armorBonus);
+  const withdrawBelow = state.encounter?.arena?.withdrawBelow;
+  if (withdrawBelow && target.hp === 0) {
+    target.hp = 1;
+    result.hpLoss = hpBefore - target.hp;
+  }
   const {penetration,blocked,hpLoss} = result;
   if (blocked > 0 || hpLoss > 0) trackEffectiveStrike(state,actor,target);
   const dealt = state.damageStats[actor.id];
@@ -919,10 +1006,16 @@ function attack(state, actor, target, roll, skill) {
   Object.assign(state.lastStrike,{zone,damage:strikeDamage,penetration,blocked,hpLoss});
   noteStrike(state,summary,detail);
   say(state,actor,"hit");
-  if (target.hp === 0) {
+  if (withdrawBelow && target.hp < target.maxHp * withdrawBelow) {
     const contribution = state.experience[actor.id];
     if (contribution && target.side !== actor.side) contribution.defeated++;
-    state.fallen.push(settlementEntry(target,"corpse"));
+    Object.assign(target,{arenaWithdrawn:true,row:"reserve",column:null});
+    state.lastStrike.arenaWithdrawn = true;
+    note(state,target.name + "生命低于 " + withdrawBelow * 100 + "%，退出竞技。","info","",{actorId:target.id});
+  } else if (target.hp === 0) {
+    const contribution = state.experience[actor.id];
+    if (contribution && target.side !== actor.side) contribution.defeated++;
+    state.fallen.push(settlementEntry(target,"corpse",state.encounter?.persistentSpoils));
     say(state,target,"fall");
     state.units = state.units.filter(unit=>unit!==target);
     note(state,target.name + "阵亡离场。","info","",{actorId:target.id});
@@ -953,7 +1046,7 @@ function attack(state, actor, target, roll, skill) {
 export function action(state, request, roll = Math.random) {
   const {type} = request;
   if (type === "settle") {
-    settle(state,request);
+    settle(state,request,roll);
   } else if (["terrain","deploy","start","encounterExit"].includes(type)) {
     if (state.phase !== "setup") throw new Error("布阵已结束");
     if (type === "terrain" && request.terrain !== state.terrain.id) {
@@ -991,7 +1084,10 @@ export function action(state, request, roll = Math.random) {
         state.units = fighters;
         applyFormation(state,standardFormation(state,width,"enemy"));
       }
-      for (const unit of state.units.filter(active)) enterBattleExperience(state,unit);
+      for (const unit of state.units.filter(active)) {
+        enterBattleExperience(state,unit);
+        if (unit.side === "enemy" && unit.monster && state.encounter?.enemySurprised) unit.statuses.surprised = 1;
+      }
       startMorale(state);
       advance(state);
     }
@@ -1010,6 +1106,7 @@ export function action(state, request, roll = Math.random) {
       }
       enterFromReserve(state,state.units.find(unit=>unit.id===request.actor),request.row,request.column);
     }
+    if (type === "finishReinforcement" && state.autoBattle) reinforceSide(state,"player");
     if (type === "finishReinforcement" || !reinforcementOptions(state,"player").units.length) advance(state);
   } else if (type === "retreat" || type === "enemyRetreat") {
     const actor = assertActor(state,request.actor,type === "retreat" ? "player" : "enemy");
@@ -1035,11 +1132,12 @@ export function action(state, request, roll = Math.random) {
   } else if (type === "swapItem") {
     swapCarriedGear(state,request);
     advance(state);
-  } else if (type === "attack" || type === "enemyAttack" || type === "enemySkill") {
-    const side = type === "attack" ? "player" : "enemy";
+  } else if (["attack","enemyAttack","enemySkill","playerSkill"].includes(type)) {
+    const side = type === "attack" || type === "playerSkill" ? "player" : "enemy";
     const actor = assertActor(state,request.actor,side);
-    const skill = type === "enemySkill" && actor.skills.includes(request.skill) ? enemySkills[request.skill] : undefined;
-    if (type === "enemySkill" && !skill) throw new Error("该技能现在无法使用");
+    const usesSkill = type === "enemySkill" || type === "playerSkill";
+    const skill = usesSkill && actor.skills.includes(request.skill) ? enemySkills[request.skill] : undefined;
+    if (usesSkill && !skill) throw new Error("该技能现在无法使用");
     if (skill?.healRatio) {
       const healing = healingAmount(actor,skill);
       if (!healing) throw new Error("生命值已满");
@@ -1056,8 +1154,20 @@ export function action(state, request, roll = Math.random) {
         state.ammoSpent += cost;
       }
       attack(state,actor,target,roll,skill);
+      if (actor.monster && ++actor.attacksMade < actor.monster.attacksPerAction && canFight(actor) &&
+          reachable(state,actor.id).some(canFight)) {
+        actor.acted = false;
+        state.rev++;
+        return;
+      }
     }
     if (skill) actor.skills = actor.skills.filter(id=>id!==request.skill);
+    advance(state);
+  } else if (type === "monsterPass") {
+    const actor = assertActor(state,request.actor,state.phase);
+    if (!actor.monster) throw new Error("只有怪物可以这样结束行动。");
+    actor.acted = true;
+    note(state,actor.name + "够不着敌人，结束行动。","info","",{actorId:actor.id});
     advance(state);
   } else if (type === "dodge" || type === "enemyDodge") {
     const actor = assertActor(state,request.actor,type === "dodge" ? "player" : "enemy");
@@ -1123,15 +1233,53 @@ function pressureFrom(state, actor, target) {
 
 const expectedPressure = (state,target,opponents) => opponents.reduce((sum,actor)=>sum+pressureFrom(state,actor,target),0);
 
+const tacticalActions = {
+  player:{retreat:"retreat",attack:"attack",skill:"playerSkill",defend:"defend",dodge:"dodge",move:"move"},
+  enemy:{retreat:"enemyRetreat",attack:"enemyAttack",skill:"enemySkill",defend:"enemyDefend",dodge:"enemyDodge",move:"enemyMove"},
+};
+
 export function chooseEnemy(state) {
-  if (state.phase !== "enemy") return null;
+  return state.phase === "enemy" ? chooseBattleAction(state) : null;
+}
+
+function closestEnemyDistance(unit,targets) {
+  return Math.min(...targets.map(target=>
+    Math.max(Math.abs(rankOf(unit)-rankOf(target)),Math.abs(unit.column-target.column))));
+}
+
+function chooseMonsterAction(state,actor,actions) {
+  const targets = reachable(state,actor.id);
+  const target = targets.find(canFight) ?? targets[0];
+  if (target) return {type:actions.attack,actor:actor.id,target:target.id};
+
+  const enemies = sideUnits(state,other(actor.side)).filter(active);
+  let distance = closestEnemyDistance(actor,enemies);
+  let advanceTo;
+  for (const spot of movementOptions(state,actor).destinations) {
+    const remaining = closestEnemyDistance(spot,enemies);
+    if (remaining >= distance) continue;
+    advanceTo = spot;
+    distance = remaining;
+  }
+  if (advanceTo) {
+    const {fieldSide,row,column} = advanceTo;
+    return {type:actions.move,actor:actor.id,fieldSide,row,column};
+  }
+  return {type:"monsterPass",actor:actor.id};
+}
+
+export function chooseBattleAction(state) {
+  const actions = tacticalActions[state.phase];
+  if (!actions) return null;
   const pending = orderedActors(state);
   const actor = pending[0];
   if (!actor) return null;
+  if (actor.monster) return chooseMonsterAction(state,actor,actions);
+
   const {id,hp,maxHp} = actor;
-  if (hp <= maxHp*heavyWoundRatio && !retreatProblem(state,actor) &&
-      sideUnits(state,actor.side).some(unit=>unit!==actor && active(unit) && unit.morale!==whiteFlag)) {
-    return {type:"enemyRetreat",actor:id};
+  const hasFightingAlly = sideUnits(state,actor.side).some(unit=>unit!==actor && canFight(unit));
+  if (!actor.attacksMade && hp <= maxHp*heavyWoundRatio && !retreatProblem(state,actor) && hasFightingAlly) {
+    return {type:actions.retreat,actor:id};
   }
 
   const opponents = upcomingOpponents(state,actor,pending);
@@ -1150,40 +1298,47 @@ export function chooseEnemy(state) {
     const threat = opponents.filter(unit=>unit.id===target.id).length;
     return offense + defeat*threat*pressureFrom(state,target,actor)*urgency;
   };
-  for (const target of targets) consider("enemyAttack",valueOfAttack(target),{target:target.id});
+  for (const target of targets) consider(actions.attack,valueOfAttack(target),{target:target.id});
+  if (actor.attacksMade && best) return best;
   for (const skillId of actor.skills) {
     const skill = enemySkills[skillId];
+    if (!skill) continue;
     if (skill.healRatio) {
+      if (!hasFightingAlly && targets.length) continue;
       const healing = healingAmount(actor,skill);
       if (healing > 0) {
         const safer = pressure - expectedPressure(state,{...actor,hp:hp+healing},opponents);
-        consider("enemySkill",healing+Math.max(0,safer)*urgency*.5-6,{skill:skillId});
+        consider(actions.skill,healing+Math.max(0,safer)*urgency*.5-6,{skill:skillId});
       }
     } else {
       for (const target of targets) {
-        consider("enemySkill",valueOfAttack(target,skill) - 6,{skill:skillId,target:target.id});
+        consider(actions.skill,valueOfAttack(target,skill) - 6,{skill:skillId,target:target.id});
       }
     }
   }
-  consider("enemyDefend",(pressure-expectedPressure(state,{...actor,statuses:{...actor.statuses,defend:1}},opponents))*urgency);
-  consider("enemyDodge",(pressure-expectedPressure(state,{...actor,statuses:{...actor.statuses,dodge:1}},opponents))*urgency);
+  const considerDefense = () => {
+    consider(actions.defend,(pressure-expectedPressure(state,{...actor,statuses:{...actor.statuses,defend:1}},opponents))*urgency);
+    consider(actions.dodge,(pressure-expectedPressure(state,{...actor,statuses:{...actor.statuses,dodge:1}},opponents))*urgency);
+  };
+  if (hasFightingAlly) considerDefense();
 
   if (!targets.length) {
     const targetsAhead = sideUnits(state,other(actor.side)).filter(active);
-    const distance = unit=>Math.min(...targetsAhead.map(target=>
-      Math.max(Math.abs(rankOf(unit)-rankOf(target)),Math.abs(unit.column-target.column))));
+    const distance = unit=>closestEnemyDistance(unit,targetsAhead);
     const before = distance(actor);
     for (const {fieldSide,row,column} of movementOptions(state,actor).destinations) {
       const moved = {...actor,fieldSide,row,column};
       const projection = {...state,units:state.units.map(unit=>unit===actor ? moved : unit)};
-      const nextPressure = expectedPressure(projection,moved,opponents);
       const nextAttack = Math.max(0,...reachable(projection,id).map(target=>forecastAttack(projection,moved,target).offense));
       const remaining = distance(moved);
       const approaching = remaining < before;
+      if (!hasFightingAlly && !approaching && !nextAttack) continue;
+      const nextPressure = expectedPressure(projection,moved,opponents);
       const approach = approaching ? (before-remaining)*actor.damage*.35 : 0;
       const value = (pressure-nextPressure)*urgency + nextAttack*.45 + approach;
-      consider("enemyMove",approaching && pressure===0 ? Math.max(1,value) : value,{fieldSide,row,column});
+      consider(actions.move,approaching && pressure===0 ? Math.max(1,value) : value,{fieldSide,row,column});
     }
   }
+  if (!best) considerDefense();
   return best;
 }

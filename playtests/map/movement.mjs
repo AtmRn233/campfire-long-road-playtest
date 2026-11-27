@@ -1,6 +1,6 @@
 const fieldForTerrain = {
   grass:"grass", field:"farmland", steppe:"steppe", forest:"wood", denseforest:"denseForest",
-  hill:"hill", mountain:"mountain", marsh:"marsh", desert:"desert", saltflat:"saltFlat",
+  hill:"hill", mountain:"mountain", marsh:"marsh", desert:"desert",
   stream:"stream", river:"river", water:"lake",
 };
 const torchBlocked = new Set(["lightRain","heavyRain","lightFog","heavyFog"]);

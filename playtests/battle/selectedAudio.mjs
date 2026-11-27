@@ -1,5 +1,8 @@
 // 2026-11-23 用户确认的本地试听编号。来源及许可见 audio/selected/CREDITS.txt。
+import {monsterHitRecordings,monsterHitSound} from "./monsterAudio.mjs";
+export {monsterHitRecordings};
 export const selectedBattleRecordings={
+  ...Object.fromEntries(Object.values(monsterHitRecordings).map(entry=>[entry.name,entry])),
   block:{code:"S0430",url:"./audio/selected/S0430.wav",offset:.176},
   shieldBreak:{code:"S2205",url:"./audio/selected/S2205.wav",offset:.15},
   missOne:{code:"S0602",url:"./audio/selected/S0602.wav"},
@@ -44,6 +47,7 @@ export function selectedStrikeSounds(strike,weapon,target) {
   const name=weapon?.baseName??weapon?.name??"";
   const projectile=ranged&&!weapon?.magic&&/[弓弩]|标枪|標槍|投斧|飞斧|飛斧|投石|石索/.test(name);
   const piercing=projectile&&/[弓弩]|标枪|標槍/.test(name);
+  const monsterHit=monsterHitSound(target);
   // 给已选发射声的主体留出空间，再播放一次接触或掠过。
   const impact=projectile ? .28 : ranged ? .16 : .105;
   // 魔法尚待用户定稿，暂沿用原来的施法声。近战出手不播放声音。
@@ -51,6 +55,8 @@ export function selectedStrikeSounds(strike,weapon,target) {
   else if(ranged) add(/弩/.test(name)?"crossbowLaunch":/弓/.test(name)?"bowLaunch":"throwLaunch");
   // S2205 已含撞击与裂碎，破盾时替代普通盾挡，避免同一击叠加两次撞击。
   if(strike.outcome==="block") add(strike.guard?.broken?"shieldBreak":strike.guard||strike.zone==="shield"?"shield":"block",impact);
+  // 怪物每次命中只用该类别的一条受击声，替代人体／护甲接触声。
+  else if(monsterHit&&strike.hit!==false&&!["miss","dodge"].includes(strike.outcome)) add(monsterHit,impact);
   else if(projectile) {
     if(strike.hit===false || ["miss","dodge"].includes(strike.outcome)) add(/弩/.test(name)?"crossbowMiss":"projectileMiss",impact);
     else {
@@ -73,10 +79,13 @@ export function selectedStrikeSounds(strike,weapon,target) {
 export function selectedStrikeFeedback(strike,weapon,target,fallen=false) {
   const events=selectedStrikeSounds(strike,weapon,target);
   const impact=Math.max(0,...events.map(e=>e.delay));
-  if(target&&strike.hpLoss>0&&(fallen||strike.hpLoss*10>=target.maxHp)&&strike.hit!==false&&!["miss","dodge","block"].includes(strike.outcome)) {
-    const gender=["male","female"].includes(target.gender)?target.gender:target.voiceProfile==="female"||target.id==="vera"?"female":"male";
+  // 怪物受击已在接触时播放，不再叠加人物叫声。
+  if(target&&!target.monster&&strike.hpLoss>0&&(fallen||strike.hpLoss*10>=target.maxHp)&&strike.hit!==false&&!["miss","dodge","block"].includes(strike.outcome)) {
+    // 主角性别允许自由填写，声音沿用人物资料所识别的中英文男女别名。
+    const genderId=String(target.gender??"").trim().toLowerCase();
+    const gender=["female","女","女性","f"].includes(genderId)?"female":["male","男","男性","m"].includes(genderId)?"male":target.voiceProfile==="female"||target.id==="vera"?"female":"male";
     events.push({name:gender+(fallen?"-death":"-hurt"),delay:impact+(fallen ? .12 : .08),volume:fallen ? .60 : .46});
   }
-  if(fallen||strike.dismounted) events.push({name:"fall",delay:impact+.28});
+  if((fallen&&!target?.monster)||strike.dismounted) events.push({name:"fall",delay:impact+.28});
   return events.sort((a,b)=>a.delay-b.delay);
 }

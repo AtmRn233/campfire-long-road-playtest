@@ -5,7 +5,7 @@ let footprint;
 export function paintMapFootprints(ctx, steps, cellSize) {
   if (!steps.length) return;
   footprint ??= new Path2D(sole);
-  const scale = cellSize / 34;
+  const scale = cellSize / 46;
   for (const step of [...steps].reverse()) {
     ctx.save();
     ctx.globalAlpha = opacity[step.age];
