@@ -54,6 +54,14 @@ export function createOpeningScreen({text,renderCard,send}) {
   }
 
   function updateSummary() {
+    const offer = state.encounter?.taming;
+    const tame = $("tame-encounter");
+    tame.hidden = !offer;
+    if (offer) {
+      tame.textContent = `驯服（${offer.cost} 份食物）`;
+      tame.disabled = Boolean(offer.blocked);
+      tame.title = offer.blocked || `${offer.name} · ${offer.difficulty}难度 · 驯兽 ${offer.dc}`;
+    }
     const start = $("start-encounter");
     start.disabled = !canStart(state);
     if (start.disabled) start.title = "对方没有战斗人员";

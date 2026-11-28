@@ -20,12 +20,12 @@ interface TownMap extends TerrainMap {
 }
 
 interface TravelRules {
-  levels: readonly { id: string; hours: number; terrains: readonly string[] }[]
-  costs?: Readonly<Record<string, number>>
+  localStepsPerMinute: number
 }
 
 export interface TravelProfile { speed: number; terrains: readonly string[] }
-export function movementHours(cost: number, terrain: string, travelers?: readonly TravelProfile[]): number
+export function slowestTravelSpeed(travelers?: readonly TravelProfile[]): number
+export function mapStepHours(rules: TravelRules, travelers?: readonly TravelProfile[]): number
 export function terrainMovementHours(rules: TravelRules, terrain: string, travelers?: readonly TravelProfile[]): number | undefined
 export function formatTravelDuration(hours: number): string
 export function terrainAt(map: TerrainMap, at: Point): string

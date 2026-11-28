@@ -1,3 +1,5 @@
+import { headshotCrop, portraitBackground, portraitSelectionKey, readPortraitCrop } from "./portraits.mjs";
+
 const professionIcons = {
   战士:"⚔️",野蛮人:"🪓",武僧:"👊",游侠:"🏹",盗贼:"🗡️",圣骑士:"🛡️",牧师:"✝️",德鲁伊:"🌿",
   吟游诗人:"🎶",法师:"🪄",术士:"✨",契约术士:"📜",农夫:"🌾",牧人:"🐑",渔人:"🎣",采集人:"🧺",
@@ -12,6 +14,18 @@ export const unitCardLevel = (unit) => {
   const level = Number.isFinite(value) ? Math.max(1,Math.trunc(value)) : 1;
   return unit.monster ? Math.min(10,level) : level;
 };
+
+export function renderUnitHeadshot(name, source, key, className="face") {
+  if (!source) return '<span class="' + className + ' portrait-placeholder" aria-hidden="true">' + text([...name][0] ?? "") + '</span>';
+  const saved = key ? readPortraitCrop(portraitSelectionKey(key,source)) : undefined;
+  const crop = headshotCrop(source,saved);
+  if (!crop) return '<img class="' + className + '" src="' + text(source.url) + '" alt="">';
+  const {size,position} = portraitBackground(source,crop);
+  const url = 'url("' + source.url.replaceAll('"','%22') + '")';
+  return '<span class="' + className + ' portrait-crop-asset" aria-hidden="true" style="background-image:' + text(url) +
+    ';background-repeat:no-repeat;background-size:' + size.map(value=>value+"%").join(" ") +
+    ';background-position:' + position.map(value=>value+"%").join(" ") + '"></span>';
+}
 
 export function renderUnitMeter(kind,label,value,capacity,trail="") {
   const current = Number(value);
@@ -35,7 +49,7 @@ export function renderUnitCardContent(unit,{portrait, badges="", field=false, me
     field ? meter("stamina","耐",unit.stamina ?? {current:0,max:0}) : "";
   const resources = meter("head","盔",unit.armor.head) + meter("body","甲",unit.armor.body) +
     meter("hp","血",{current:unit.hp,max:unit.maxHp}) + (field ? energy + gear : gear || energy);
-  const face = portrait ?? ('<span class="face portrait-placeholder" aria-hidden="true">' + text([...unit.name][0] ?? "") + '</span>');
+  const face = portrait ?? renderUnitHeadshot(unit.name);
   return '<span class="card-portrait">' + face + badges + '</span><span class="card-data"><strong>' +
     text(unit.name) + '</strong>' + resources + '</span>' +
     '<span class="morale-mark ' + tone + '" role="img" aria-label="士气 ' + moraleLabel(morale) +

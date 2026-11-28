@@ -17,7 +17,7 @@ let route = null;
 let timer;
 const weatherKey = () => $("weather").value;
 const favoredTerrains = () => settings.races.find(race => race.id === $("race").value)?.terrains ?? [];
-const travelers = () => [{speed:settings.races.find(race => race.id === $("race").value)?.speed ?? 100,terrains:favoredTerrains()}];
+const travelers = () => [{speed:settings.races.find(race => race.id === $("race").value)?.speed ?? 1,terrains:favoredTerrains()}];
 const coords = cell => `X ${cell.x + 1} · Y ${cell.y + 1}`;
 const equal = (a, b) => a.x === b.x && a.y === b.y;
 const range = () => sightRange(settings.map, visitor, settings.weather, weatherKey(), light, time);
@@ -64,9 +64,8 @@ function describe() {
   const water = isWaterway(terrain);
   const road = !isImpassableTerrain(terrain) && terrain !== "shallows" && (!water || isRoadBridge(map,selected)) &&
     map.roads[MapModel.cellIndex(selected.x, selected.y)] && MapModel.roadMask(map, selected.x, selected.y);
-  const favored = favoredTerrains();
   const hours = terrainMovementHours(travel, road ? "road" : terrain, travelers());
-  const reason = water && !road ? "（乘船）" : road ? "（沿路）" : favored.includes(terrain) ? "（擅长）" : "";
+  const reason = water && !road ? "（乘船）" : road ? "（沿路）" : "";
   $("terrain").textContent = hidden ? "未看清" : name;
   $("movement").textContent = hidden ? "—" : hours === undefined ? "不可通行" : formatTravelDuration(hours) + reason;
   $("place").textContent = location?.name ?? (hidden ? "未探索" : name);

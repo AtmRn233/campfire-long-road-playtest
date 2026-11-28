@@ -10,6 +10,7 @@ export function characterProfileTop(profile: {
   originName?: string
   profession?: string
   factionLabel?: string
+  monsterCategory?: string
   level?: number
   experience?: string
 }): {
@@ -31,6 +32,7 @@ export interface ProfileMeter { current: number; max: number }
 export interface CharacterProfile {
   gender?: string; genderLabel?: string; faceLabel?: string; bodyLabel?: string; raceName?: string; originName?: string
   profession?: string; factionLabel?: string; level?: number; experience?: string
+  monsterCategory?: string
   profileResistances?: string[]; profileStatuses?: string[]; traits?: string[]
   profileStatSources?: Partial<Record<ProfileStat, ProfileStatSource>>
   profileMorale?: string; initiative?: number; damage?: number; profileHit?: number

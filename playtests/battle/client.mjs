@@ -43,13 +43,14 @@ export function battleParticipantGear(unit) {
     weapon:equipWeapon(unit.weapon,unit.weaponBase),
     head:equipArmor(unit.head),
     body:equipArmor(unit.body),
+    extraBodyArmor:Object.fromEntries(Object.entries(unit.extraBodyArmor ?? {}).map(([slot,piece])=>[slot,equipArmor(piece)])),
     shield:equipArmor(unit.shield,true),
     items:unit.items?.map(itemFor),
     handItems:Object.fromEntries(Object.entries(unit.handItems ?? {}).map(([slot,item])=>[slot,itemFor(item)])),
   };
 }
 
-export function applyBattleCatalog(weather, gear, mounts = defaultMounts, player, roster, encounterWeather, allies = [], ammo, partyMemberIds, enemies, encounter) {
+export function applyBattleCatalog(weather, gear, mounts = defaultMounts, player, roster, encounterWeather, allies = [], ammo, partyMemberIds, enemies, encounter, encounterTerrain) {
   catalog.mounts = mounts;
   for (const [name,rule] of Object.entries(gear)) {
     if (rule?.weight_kg !== undefined) catalog.gearWeights[name] = rule.weight_kg;
@@ -87,7 +88,7 @@ export function applyBattleCatalog(weather, gear, mounts = defaultMounts, player
     if (rule.block_bonus !== undefined) armor.blockBonus = rule.block_bonus * 100;
   }
   if (player) {
-    battleSession.beginEncounter(battleParticipantGear(player),encounterWeather,allies.map(battleParticipantGear),ammo,partyMemberIds,enemies?.map(battleParticipantGear),encounter);
+    battleSession.beginEncounter(battleParticipantGear(player),encounterWeather,allies.map(battleParticipantGear),ammo,partyMemberIds,enemies?.map(battleParticipantGear),encounter,encounterTerrain);
   } else if (battleSession.snapshot().phase === "setup") battleSession.submit({ type: "reset" });
 }
 
@@ -96,7 +97,7 @@ export const battleSession = createBattleSession();
 if (typeof window !== "undefined") {
   window.addEventListener("message", event => {
     if (event.origin !== location.origin || event.source !== window.parent || event.data?.type !== "campfire-battle") return;
-    const { weather, gear, mounts, player, roster, encounterWeather, allies, ammo, partyMemberIds, enemies, encounter } = event.data;
-    applyBattleCatalog(weather, gear, mounts, player, roster, encounterWeather, allies, ammo, partyMemberIds, enemies, encounter);
+    const { weather, gear, mounts, player, roster, encounterWeather, allies, ammo, partyMemberIds, enemies, encounter, encounterTerrain } = event.data;
+    applyBattleCatalog(weather, gear, mounts, player, roster, encounterWeather, allies, ammo, partyMemberIds, enemies, encounter, encounterTerrain);
   });
 }

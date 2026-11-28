@@ -1,6 +1,8 @@
+@import "../../fonts/ui.css";
+
 :root {
   color-scheme: dark;
-  font: 15px/1.55 "Microsoft YaHei", sans-serif;
+  font: 15px/1.55 var(--font-body);
   color: #f0e7d3;
   background: #24221a;
   --line: #716149;

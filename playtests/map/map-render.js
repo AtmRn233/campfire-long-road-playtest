@@ -37,13 +37,18 @@
   const DIRECTIONS = [[0, -1, 1], [1, 0, 2], [0, 1, 4], [-1, 0, 8]];
   const isChannel = (terrain) => terrain === 'stream' || terrain === 'river';
   const images = {};
-  const ready = Promise.all(Object.entries(MapAssets).map(([key, src]) => new Promise((resolve, reject) => {
+  const labelFont = getComputedStyle(document.documentElement).fontFamily;
+  const imageLoads = Object.entries(MapAssets).map(([key, src]) => new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve();
     image.onerror = () => reject(new Error('无法加载地图素材 ' + key));
     image.src = src;
     images[key] = image;
-  })));
+  }));
+  const ready = Promise.all([
+    ...imageLoads,
+    document.fonts.load(`700 16px ${labelFont}`).catch(() => []),
+  ]);
 
   function drawFit(ctx, asset, x, y, width, height) {
     const image = images[asset];
@@ -411,7 +416,7 @@
 
   function paintNames(ctx, map, showLabels, isKnown) {
     ctx.save();
-    ctx.font = '700 16px "Microsoft YaHei", sans-serif';
+    ctx.font = `700 16px ${labelFont}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.lineJoin = 'round';
@@ -507,7 +512,7 @@
 
     ctx.save();
     const district = region.terrains.length === 0;
-    ctx.font = (district ? '800 19px' : '700 19px') + ' "Microsoft YaHei", sans-serif';
+    ctx.font = `${district ? 800 : 700} 19px ${labelFont}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const width = Math.min(ctx.measureText(region.name).width, 190);

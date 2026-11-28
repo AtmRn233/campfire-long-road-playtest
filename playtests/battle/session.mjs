@@ -1,4 +1,4 @@
-import { accuracyFor, action, assertAttack, attackOptions, catalog, chooseBattleAction, createBattle, defenseFor, drawWeather, effectiveAttribute, movementOptions, openColumn, orderedActors, reinforcementOptions, replaceBattleEquipment, retreatProblem, say } from "./battle.mjs";
+import { accuracyFor, action, armorDurability, assertAttack, attackOptions, catalog, chooseBattleAction, createBattle, defenseFor, drawWeather, effectiveAttribute, movementOptions, openColumn, orderedActors, reinforcementOptions, replaceBattleEquipment, retreatProblem, say } from "./battle.mjs";
 import { battleLogLines } from "./battleLog.mjs";
 
 export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math.random,weatherRoll=Math.random}={}) {
@@ -138,10 +138,10 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
     return snapshot();
   }
 
-  function beginEncounter(player, weatherId, allies = [], ammo, partyMemberIds = allies.map(unit => unit.id), enemies, encounter) {
+  function beginEncounter(player, weatherId, allies = [], ammo, partyMemberIds = allies.map(unit => unit.id), enemies, encounter, terrain) {
     if (encounterMembers) return;
     const members = allies.map(unit => ({...unit,presetId:unit.id,id:"ally-" + encodeURIComponent(unit.id)}));
-    state = createBattle("clearing",weatherId,supplies,{...player,presetId:player.id,id:"pc"},rosterProfiles,members,partyMemberIds,enemies,encounter);
+    state = createBattle(terrain?.id ?? "clearing",weatherId,supplies,{...player,presetId:player.id,id:"pc"},rosterProfiles,members,partyMemberIds,enemies,encounter,terrain?.ground);
     if (Number.isSafeInteger(ammo) && ammo >= 0) Object.assign(state,{ ammoLeft:ammo, ammoSpent:0 });
     encounterMembers = [[player.id,"pc"],...allies.map((unit,i)=>[unit.id,members[i].id])];
     if (encounter?.arena?.mode === "sparring") {
@@ -186,9 +186,8 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
       if (fallen?.durability) return [[member,fallen.durability]];
       const entry = state.units.find(entry=>entry.id===unit) ?? fallen?.card;
       if (!entry) return [];
-      const slots = [["head",entry.armor.head],["body",entry.armor.body],["off_hand",entry.shield]]
-        .filter(([,piece])=>piece && piece.current<piece.max).map(([slot,piece])=>[slot,piece.current]);
-      return slots.length ? [[member,Object.fromEntries(slots)]] : [];
+      const slots = armorDurability(entry);
+      return Object.keys(slots).length ? [[member,slots]] : [];
     }));
     const usedItems = Object.fromEntries(encounterMembers.filter(([,unit])=>state.usedItems[unit])
       .map(([member,unit])=>[member,state.usedItems[unit]]));
@@ -200,12 +199,14 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
       .map(([member,unit])=>[member,{...state.experience[unit]}]));
     const settlement = state.encounter?.persistentSpoils && state.settlement?.left ? state.settlement : null;
     const materials = settlement?.inventory.filter(item=>item.harvested).map(item=>({name:item.name,qty:item.quantity}));
+    const corpses = settlement?.inventory.flatMap(item=>item.corpse ? [item.corpse.unit] : []);
     const spoils = settlement && {
       ...(materials?.length ? {materials} : {}),
+      ...(corpses?.length ? {corpses} : {}),
       items:settlement.inventory.flatMap(item=>item.source ? [{...item.source,current:item.current}] : []),
-      prisoners:settlement.entries.filter(entry=>entry.kind==="prisoner" && ["recruit","execute"].includes(entry.disposition))
+      prisoners:settlement.entries.filter(entry=>entry.executed || entry.kind==="prisoner" && entry.disposition==="recruit")
         .map(entry=>({unit:entry.card.id,name:entry.card.name,outcome:entry.disposition === "recruit" ? "capture" : "execute",
-          hp:entry.card.hp,durability:entry.durability})),
+          hp:entry.card.hp,durability:entry.durability,...(entry.executed ? {description:entry.executed} : {})})),
     };
     return {outcome,hp,...(encounterStarted ? {battleLog:battleLogLines(state.log)} : {}),
       ...(spoils ? {spoils} : {}),

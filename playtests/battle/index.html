@@ -7,7 +7,7 @@
   <title>战斗演示</title>
   <script>if (window === window.parent) location.replace("../../");</script>
   <link rel="stylesheet" href="../weatherVisual.css">
-  <link rel="stylesheet" href="./style.css?v=copper-unit-cards">
+  <link rel="stylesheet" href="./style.css?v=shared-ui-font">
   <link rel="stylesheet" href="./portraitHandles.css">
 </head>
 <body>
@@ -22,6 +22,8 @@
       </section>
       <section class="encounter-actions" aria-label="遭遇行动">
         <button id="open-parley" class="quiet" type="button" aria-haspopup="dialog">对话</button>
+        <button id="tame-encounter" class="quiet" type="button" hidden>驯服</button>
+        <small id="tame-encounter-result" role="status" hidden></small>
         <button id="start-encounter" class="primary" type="button">开始战斗</button>
         <div class="encounter-deployment">
           <button id="prepare-encounter" class="quiet" type="button" data-prepare-encounter>更换装备</button>
@@ -122,7 +124,6 @@
             <button type="button" data-entry-tab="fallen" aria-controls="victory-entries" aria-pressed="false">牺牲 <span></span></button>
           </div>
           <div class="spoils-batch">
-            <button id="execute-all" class="quiet" type="button" data-settlement-all="execute" hidden>全部处决</button>
             <button id="process-all" class="primary" type="button" data-settlement-all="process">一键处理</button>
           </div>
         </header>
@@ -226,6 +227,7 @@
   </dialog>
   <dialog id="unit-dialog" class="unit-dialog" aria-labelledby="unit-heading" closedby="any">
     <header class="unit-dialog-head">
+      <a id="unit-world-book" class="quiet" target="_blank" rel="noopener" hidden>查看世界书</a>
       <div class="unit-identity"><h2 id="unit-heading"></h2><span id="unit-title-actions"></span><span id="unit-level" class="unit-level"></span></div>
       <form method="dialog"><button class="quiet" type="submit" aria-label="关闭人物详情">关闭</button></form>
     </header>

@@ -33,25 +33,21 @@ function meetsUnpavedBank(map, bridge, bank) {
 }
 export const weatherStopsTorch = (weather) => torchBlocked.has(weather);
 
-export function travelLevelFor(travel, terrain) {
-  if (isImpassableTerrain(terrain)) return undefined;
-  return travel.levels.find(level => level.terrains.includes(terrain));
+export function slowestTravelSpeed(travelers = []) {
+  return travelers.length ? Math.min(...travelers.map(({speed}) => speed)) : 1;
 }
 
-export function movementHours(cost, terrain, travelers = []) {
-  const hours = travelers.length
-    ? Math.max(...travelers.map(({speed,terrains}) => cost / speed * (terrains.includes(terrain) ? .5 : 1)))
-    : cost / 100;
-  return Math.max(1,Math.round(hours * 60)) / 60;
+export function mapStepHours(travel, travelers) {
+  return 1 / (60 * travel.localStepsPerMinute * slowestTravelSpeed(travelers));
 }
 
 export function terrainMovementHours(travel, terrain, travelers) {
-  const level = travelLevelFor(travel, terrain);
-  const cost = travel.costs?.[terrain] ?? (level && level.hours * 100);
-  return cost === undefined ? undefined : movementHours(cost, terrain, travelers);
+  return isImpassableTerrain(terrain) ? undefined : mapStepHours(travel, travelers);
 }
 
 export function formatTravelDuration(hours) {
+  const seconds = Math.round(hours * 3600);
+  if (seconds > 0 && seconds < 60) return seconds + " 秒";
   const minutes = Math.round(hours * 60);
   const days = Math.floor(minutes / 1440);
   const wholeHours = Math.floor(minutes % 1440 / 60);
@@ -59,7 +55,7 @@ export function formatTravelDuration(hours) {
   return [days && days + " 天", wholeHours && wholeHours + " 小时", rest && rest + " 分钟"].filter(Boolean).join(" ") || "0 分钟";
 }
 
-export function stepCost(map, from, to, travel, boat = false, favored = [], travelers = [{speed:100,terrains:favored}]) {
+export function stepCost(map, from, to, travel, boat = false, _favored = [], travelers = []) {
   if (!onMap(map,from.x,from.y) || !onMap(map,to.x,to.y)) return { error:"已到地图边缘" };
   const dx = Math.abs(to.x-from.x);
   const dy = Math.abs(to.y-from.y);
@@ -86,8 +82,7 @@ export function stepCost(map, from, to, travel, boat = false, favored = [], trav
   if (!boat && (sailing || leavingWater)) return { error:"这里需要乘船" };
   if (!boat && diagonal && isWaterway(acrossX) && isWaterway(acrossY)) return { error:"这里需要走桥或浅滩" };
   const onRoad = !sailing && terrain !== "shallows" && (connectedRoad || !!toBridge);
-  const hours = terrainMovementHours(travel, onRoad ? "road" : terrain, travelers);
-  return hours === undefined ? { error:"这里无法通行" } : { hours, onRoad, terrain };
+  return { hours:mapStepHours(travel, travelers), onRoad, terrain };
 }
 
 export function townBarrierAt(map, {x,y}) {
@@ -118,11 +113,7 @@ export function fastestRoute(map, from, to, travel, boat = false, favored = [], 
 }
 
 export function findLocalRoute(map, from, to, canStep) {
-  return findGridRoute(map,from,to,(here,next) => {
-    if (!canStep(here,next)) return Infinity;
-    const weight = map.roads[indexAt(map,next.x,next.y)] ? 2 : 1;
-    return 1/weight;
-  });
+  return findGridRoute(map,from,to,(here,next) => canStep(here,next) ? 1 : Infinity);
 }
 
 export function findGridRoute(map, from, to, costForStep) {

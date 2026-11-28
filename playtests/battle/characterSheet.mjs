@@ -7,6 +7,10 @@ const originColumns = [
 ];
 
 export function characterProfileTop(profile) {
+  if (profile.monsterCategory !== undefined) return {
+    identity: [["类别",profile.monsterCategory || "—"],["体型",profile.bodyLabel || "—"]],
+    progress: [["等级",profile.level === undefined ? "—" : profile.level + " 级"]],
+  };
   const fallbackGender = profile.gender === "male" ? "男性" : profile.gender === "female" ? "女性" : profile.gender;
   return {
     identity: [

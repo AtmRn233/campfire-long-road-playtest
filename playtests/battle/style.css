@@ -1,7 +1,7 @@
 @import "./unitCard.css?v=copper-unit-cards";
 @import "./characterProfile.css";
-@import "../../fonts/emoji.css";
-:root{color-scheme:dark;--ink:#171512;--panel:#2d241d;--line:#826448;--paper:#f4e8d5;--muted:#cfbda3;--gold:#e6b781;--teal:#adcbb8;--rust:#e8a79a;--red:#b55048;--frame:linear-gradient(150deg,#342a21,#1c1916 76%);--rim:inset 0 1px #f2d3a127,inset 0 0 0 3px #140f0b49,0 8px 22px #0907068c;font-family:system-ui,"Microsoft YaHei UI","Microsoft YaHei",var(--font-emoji)}
+@import "../../fonts/ui.css";
+:root{color-scheme:dark;--ink:#171512;--panel:#2d241d;--line:#826448;--paper:#f4e8d5;--muted:#cfbda3;--gold:#e6b781;--teal:#adcbb8;--rust:#e8a79a;--red:#b55048;--frame:linear-gradient(150deg,#342a21,#1c1916 76%);--rim:inset 0 1px #f2d3a127,inset 0 0 0 3px #140f0b49,0 8px 22px #0907068c;font-family:var(--font-body)}
 :root{
   --tactical-paper:linear-gradient(145deg,#fff8e5,#efdfb7);
   --tactical-header:linear-gradient(100deg,#fff9e7,#ead6a6 65%,#f7ebcf);
@@ -13,6 +13,7 @@
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;color:var(--paper);background:radial-gradient(ellipse at 50% 0,#3c2c20,var(--ink) 68%);font-size:14px}
 button,select{font:inherit;color:inherit}
+input,textarea{font:inherit}
 button{cursor:pointer}
 button:disabled{cursor:default;opacity:.5}
 button:focus-visible,select:focus-visible,summary:focus-visible,input:focus-visible{outline:2px solid #f5cb8e;outline-offset:4px}
@@ -44,7 +45,7 @@ select,.quiet{border:1px solid var(--line);background:var(--panel);border-radius
 }
 .turn-track{min-width:0;min-height:0;display:flex;flex-direction:column;padding:10px;border:1px solid var(--tactical-rule);border-radius:8px;background:var(--tactical-paper);box-shadow:var(--tactical-edge);color:var(--tactical-ink);color-scheme:light}
 #round-counter{padding-bottom:10px;color:#785b30;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;text-align:center}
-:is(.turn-track,.chronicle) h2{color:var(--tactical-ink);font:700 17px "Songti SC","SimSun",serif;letter-spacing:.07em;text-align:center;white-space:nowrap}
+:is(.turn-track,.chronicle) h2{color:var(--tactical-ink);font:700 17px var(--font-body);letter-spacing:.07em;text-align:center;white-space:nowrap}
 .turn-track h2{padding-bottom:8px;border-bottom:1px solid #b7a06a85}
 #turn-order{display:flex;flex-direction:column;gap:6px;list-style:none;margin:0;padding:5px 0;min-width:0;overflow:auto;scrollbar-width:none}
 #turn-order li{--side:#758c6d;display:flex;align-items:center;gap:5px;min-width:0;padding:4px;border:1px solid #c9b58d;border-inline-start:2px solid var(--side);border-radius:5px;background:#fff9ea;color:var(--tactical-ink);font-size:13px}
@@ -67,7 +68,7 @@ body[data-lighting] .board > .weather-visual[data-weather="clear"]{opacity:0}
 .theater-top,.theater-bottom{min-height:44px;flex-wrap:wrap;gap:6px 12px;padding:5px 14px;color:var(--tactical-ink);color-scheme:light;background:var(--tactical-header)}
 .theater-top{border-bottom:1px solid var(--tactical-rule)}
 .theater-bottom{border-top:1px solid var(--tactical-rule)}
-.side{font-family:"Songti SC","SimSun",serif;font-size:15px;font-weight:700;letter-spacing:.13em;white-space:nowrap}
+.side{font-size:15px;font-weight:700;letter-spacing:.13em;white-space:nowrap}
 .side.enemy{color:var(--tactical-enemy)}.side.player{color:var(--tactical-ally)}
 .board{position:relative;isolation:isolate;min-height:0;flex:1;display:grid;padding:6px var(--board-gutter)}
 .board > .weather-visual{z-index:-1}
@@ -139,7 +140,7 @@ body[data-lighting] .board > .weather-visual[data-weather="clear"]{opacity:0}
 .blood-spatter i{position:absolute;display:block;border-radius:61% 39% 71% 29% / 44% 70% 30% 56%;background:radial-gradient(ellipse at 32% 27%,#ad4135 2%,#711912 33%,#460e0be8 73%);box-shadow:0 0 1px #2e0909}
 .blood-spatter i:nth-child(3n){border-radius:27% 73% 31% 69% / 55% 42% 58% 45%;background:radial-gradient(ellipse at 39% 36%,#8d271e,#390908e8 78%)}
 .blood-spatter .blood-pool{background:radial-gradient(ellipse at 34% 28%,#aa3026,#69110fee 42%,#3d0808de 75%,#3d080863);box-shadow:inset 2px 1px 2px #3805087a,0 0 2px #350506d0}
-.battle-banner{position:absolute;z-index:6;left:50%;top:50%;transform:translate(-50%,-50%);width:min(480px,100%);padding:13px 12px;color:#ffe6ac;background:linear-gradient(90deg,transparent,#121d27f5 24% 76%,transparent);font:700 clamp(26px,3vw,46px) "Songti SC","SimSun",serif;letter-spacing:.12em;text-align:center;text-shadow:0 2px 10px #000;pointer-events:none;animation:banner-appear .22s ease-out}
+.battle-banner{position:absolute;z-index:6;left:50%;top:50%;transform:translate(-50%,-50%);width:min(480px,100%);padding:13px 12px;color:#ffe6ac;background:linear-gradient(90deg,transparent,#121d27f5 24% 76%,transparent);font:700 clamp(26px,3vw,46px) var(--font-body);letter-spacing:.12em;text-align:center;text-shadow:0 2px 10px #000;pointer-events:none;animation:banner-appear .22s ease-out}
 @keyframes banner-appear{from{opacity:0;translate:0 7px}to{opacity:1;translate:0 0}}
 .speech,.damage{position:absolute;transform:translate(-50%,-100%);font-size:12px;font-weight:650;white-space:normal;text-align:center;min-width:100px;max-width:210px;width:max-content}
 .speech{min-width:0;color:#28201a;background:#fff0cf;border:1px solid #e3ba80;border-radius:8px;padding:7px 9px;box-shadow:0 4px 12px #0009;line-height:1.4}
@@ -177,6 +178,10 @@ body[data-lighting] .board > .weather-visual[data-weather="clear"]{opacity:0}
 .unit-actions button:hover:not(:disabled){background:#553c29;border-color:#e4b776;color:#ffe0ab}
 .unit-actions [data-aim]:not(:disabled){border-color:#d0a16c;background:#c99557;color:#221a12;font-weight:700}
 .unit-actions [aria-pressed="true"]:not(:disabled){background:#3b3c35;color:#ffdb9d}
+.unit-actions:has(.settlement-description){width:min(305px,calc(100vw - 14px))}
+.settlement-description{display:flex;gap:5px;align-items:center}
+.settlement-description textarea{flex:1;min-width:0;resize:vertical;padding:5px;font:inherit}
+.settlement-description button{min-width:42px}
 #notice{position:fixed;z-index:14;bottom:14px;left:50%;translate:-50% 0;max-width:calc(100vw - 28px);padding:8px 13px;border:1px solid #6c5943;border-radius:6px;background:#1e282e;box-shadow:0 4px 14px #080d14a0;font-size:13px;line-height:1.4;color:#f1c281;pointer-events:none}
 #notice:empty{display:none}
 .chronicle{min-width:0;min-height:0;padding:9px 11px;display:flex;flex-direction:column;gap:7px;border:1px solid var(--tactical-rule);border-radius:8px;background:var(--tactical-paper);box-shadow:var(--tactical-edge);color:var(--tactical-ink);color-scheme:light}
@@ -197,7 +202,7 @@ body[data-lighting] .board > .weather-visual[data-weather="clear"]{opacity:0}
 .switch-track::before{content:"";position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;background:#cdbda8;transition:transform .15s ease}
 .battle-option-menu button[aria-checked="true"] .switch-track{border-color:#b8a36f;background:#617455}
 .battle-option-menu button[aria-checked="true"] .switch-track::before{background:#fff2cc;transform:translateX(14px)}
-#log{display:flex;flex-direction:column;gap:6px;margin:0;padding:8px 2px 0;border-top:1px solid #b7a06a85;list-style:none;min-height:0;max-height:min(70vh,520px);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#a28452 transparent;color:var(--tactical-ink);font:400 14px/1.55 "HarmonyOS Sans SC","Microsoft YaHei",sans-serif}
+#log{display:flex;flex-direction:column;gap:6px;margin:0;padding:8px 2px 0;border-top:1px solid #b7a06a85;list-style:none;min-height:0;max-height:min(70vh,520px);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#a28452 transparent;color:var(--tactical-ink);font:400 14px/1.55 var(--font-body)}
 #log li{flex:none;padding:0 1px 5px;border-bottom:1px solid #8b715641}
 #log li.speech-log{color:#764e2d}
 #log li.guard{color:#74501e}
@@ -252,14 +257,14 @@ button.roll-key:hover,button.roll-key[aria-pressed="true"]{border-color:var(--st
 .unit-dialog{width:min(480px,calc(100vw - 28px));border:1px solid #608489;border-radius:9px;background:#192a31;color:var(--paper);padding:0;box-shadow:0 18px 64px #03090da8}
 .unit-dialog::backdrop{background:#0a1116b0}
 .unit-dialog-head{display:flex;align-items:center;gap:12px;padding:15px;background:#22363c}
-.unit-dialog-head h2{font:700 22px "Songti SC","SimSun",serif}
+.unit-dialog-head h2{font:700 22px var(--font-body)}
 .unit-empty{font-size:13px;color:var(--muted)}
 .unit-dialog-head form{margin-left:auto}
 #unit-dialog{
   --line:#b7a06a;--gold:#745721;--muted:#665536;--paper:#352d1b;--panel:#fff9e9;--fact-rule:#ba9f674c;
   width:min(1000px,calc(100vw - 28px));color-scheme:light;border-color:var(--line);
   background:linear-gradient(145deg,#fff8e5,#efdfb7);
-  font:400 16px/1.55 "HarmonyOS Sans SC","Microsoft YaHei UI","Microsoft YaHei",sans-serif;
+  font:400 16px/1.55 var(--font-body);
 }
 #unit-dialog .unit-dialog-head{display:grid;grid-template-columns:minmax(56px,1fr) minmax(0,max-content) minmax(56px,1fr);padding:9px 14px;color:#523b1b;background:linear-gradient(100deg,#fff9e7,#ead6a6 65%,#f7ebcf);border-bottom:1px solid var(--line)}
 .unit-identity{grid-column:2;display:flex;align-items:center;gap:8px;min-width:0}
@@ -268,12 +273,13 @@ button.roll-key:hover,button.roll-key[aria-pressed="true"]{border-color:var(--st
 #unit-dialog .unit-dialog-head form{grid-column:3;justify-self:end}
 #unit-dialog .quiet{font-size:15px}
 #unit-dialog .unit-dialog-head .quiet{padding:4px 10px}
+#unit-world-book{grid-column:1;justify-self:start;border:1px solid var(--line);border-radius:5px;background:#fff8e6;color:inherit;text-decoration:none;white-space:nowrap}
+#unit-world-book:hover{background:#f4e2ba}
 .unit-tabs{
   display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;
   padding:8px 14px 0;border-bottom:1px solid var(--line);background:#f2e4c1;
 }
-.unit-tabs.monster-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
-.unit-tabs button[hidden]{display:none}
+.unit-tabs[hidden]{display:none}
 .unit-tabs button{
   min-height:40px;padding:6px 3px;border:1px solid #ccb482;border-bottom:0;border-radius:8px 8px 0 0;
   background:linear-gradient(#fff9eb,#f4e8cd);color:#624c2a;font-size:17px;font-weight:700;white-space:nowrap;
@@ -286,16 +292,6 @@ button.roll-key:hover,button.roll-key[aria-pressed="true"]{border-color:var(--st
   box-shadow:inset 0 1px #fff5d6,inset 0 -3px #986728;
 }
 #unit-view{--view-height:min(590px,calc(100dvh - 152px));height:var(--view-height);overflow-y:auto;padding:14px;scrollbar-color:#b69b62 transparent}
-.monster-detail-sheet{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start}
-.monster-facts{min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:7px;background:var(--panel)}
-.monster-facts-wide{grid-column:1/-1}
-.monster-facts h3{margin:0 0 8px;color:#694d26;font-size:16px}
-.monster-facts dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,130px),1fr));gap:6px;margin:0}
-.monster-facts dl>div{padding:6px 8px;border:1px solid var(--fact-rule);border-radius:5px;background:#fff9eb}
-.monster-facts dt{color:#795b35;font-size:13px}
-.monster-facts dd{margin:2px 0 0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
-.monster-facts p{margin:0;line-height:1.6;white-space:pre-wrap}
-@media(max-width:680px){.monster-detail-sheet{grid-template-columns:minmax(0,1fr)}}
 .unit-profile{display:grid;grid-template-columns:min(40%,calc((var(--view-height) - 28px)*2/3)) minmax(0,1fr);align-items:start;gap:16px}
 #unit-view .unit-profile-portrait{display:block;width:100%;height:auto;aspect-ratio:2/3;object-fit:cover;object-position:top;border:1px solid #af9260;border-radius:7px;background-color:#ecdbb5;box-shadow:0 2px 6px #513a2028}
 #unit-view .unit-profile-portrait.portrait-placeholder{display:grid;font-size:42px}
@@ -333,6 +329,8 @@ button.roll-key:hover,button.roll-key[aria-pressed="true"]{border-color:var(--st
 .battle-potions{display:grid;gap:8px;margin-top:10px}
 .use-potion{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:center;gap:8px}
 .use-potion small{display:block;font-size:14px}
+.trap-slot{border-color:#b99655;background:#514027;color:#fff1cb}
+.trapped-field-cell{display:grid;place-items:center;color:#fff1cb;font-size:25px}
 @media(max-width:740px){
   .unit-tabs{gap:3px;padding-inline:8px}
   .unit-tabs button{font-size:14px}
@@ -366,7 +364,7 @@ button.roll-key:hover,button.roll-key[aria-pressed="true"]{border-color:var(--st
   padding:4px 0 8px;border-bottom:1px solid #a78b5b75;
 }
 .victory-navigation{grid-column:3;display:flex;align-items:center;gap:12px;min-width:0}
-.victory-heading h1{grid-column:2;color:#ffe2a7;font:700 clamp(27px,2.2vw,39px) "Songti SC","SimSun",serif;letter-spacing:.1em;text-shadow:0 3px 20px #0b1016}
+.victory-heading h1{grid-column:2;color:#ffe2a7;font:700 clamp(27px,2.2vw,39px) var(--font-body);letter-spacing:.1em;text-shadow:0 3px 20px #0b1016}
 .victory-screen[data-spoils="true"] .victory-heading{
   border:1px solid #b8965e;border-radius:8px;padding:8px 12px;background:linear-gradient(#fbf2d8,#eddbad);
   box-shadow:inset 0 1px #fffdf5,inset 0 0 0 2px #cdaa6530;
@@ -380,7 +378,7 @@ button.roll-key:hover,button.roll-key[aria-pressed="true"]{border-color:var(--st
 #aftermath-bounty{color:#ebd8b5;font-size:15px}
 .victory-layout{
   display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--panel-gap);min-height:0;
-  font-family:"HarmonyOS Sans SC","Microsoft YaHei UI","Microsoft YaHei",sans-serif;
+  font-family:var(--font-body);
 }
 .victory-panel{
   display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;
@@ -396,11 +394,11 @@ button.roll-key:hover,button.roll-key[aria-pressed="true"]{border-color:var(--st
   display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px clamp(12px,2vw,24px);
   border-bottom:1px solid #a78356;background:linear-gradient(#433426,#32271e);
 }
-.battle-record-heading h2{color:#ffdd9e;font:700 26px "Songti SC","SimSun",serif}
+.battle-record-heading h2{color:#ffdd9e;font:700 26px var(--font-body)}
 .battle-report{
   min-height:0;
   overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#a47a4f #221c17;
-  font-family:"HarmonyOS Sans SC","Microsoft YaHei UI","Microsoft YaHei",sans-serif;
+  font-family:var(--font-body);
 }
 .battle-report:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
 .battle-report table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums}
@@ -469,7 +467,7 @@ button.roll-key:hover,button.roll-key[aria-pressed="true"]{border-color:var(--st
   display:grid;place-items:center;width:56px;height:56px;border:1px solid var(--path-edge);border-radius:50%;
   background:radial-gradient(circle,var(--path-light),#16171bdd);font-size:27px;
 }
-.defeat-path strong{font:700 clamp(21px,2vw,31px) "Songti SC","SimSun",serif;letter-spacing:.1em}
+.defeat-path strong{font:700 clamp(21px,2vw,31px) var(--font-body);letter-spacing:.1em}
 .defeat-detail{color:#e1d4c1;font-size:clamp(13px,1.1vw,16px);line-height:1.5;text-align:center}
 .defeat-error{margin:16px 0 0;text-align:center;color:#ffd5bd;font-size:15px}
 @media(prefers-reduced-motion:reduce){.defeat-path{transition:none}}
@@ -508,7 +506,7 @@ button.roll-key:hover,button.roll-key[aria-pressed="true"]{border-color:var(--st
 .item-filters button[aria-pressed="true"]{border-color:#ac865b;background:#f3dfb4;color:#69451f}
 .harvest-checks-list{
   min-height:0;overflow:auto;overscroll-behavior:contain;padding:12px 14px;scrollbar-width:thin;scrollbar-color:#b8955a transparent;
-  font-family:"HarmonyOS Sans SC","Microsoft YaHei UI","Microsoft YaHei",sans-serif;
+  font-family:var(--font-body);
 }
 .harvest-fallback{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 12px;margin:0 0 6px;padding:7px 9px;border:1px solid #bd9f6a80;border-radius:6px}
 .harvest-fallback span:last-child{margin-inline-start:auto;font-variant-numeric:tabular-nums}
@@ -529,7 +527,6 @@ button.roll-key:hover,button.roll-key[aria-pressed="true"]{border-color:var(--st
 }
 .spoils-state.done{color:#3f662f;border-color:#76946b73;background:#e7eed4}
 .spoils-batch{display:flex;align-items:center;gap:6px}
-#execute-all{color:#943b2b;white-space:nowrap}
 .spoils-empty{
   display:grid;place-items:center;min-height:108px;margin:0;padding:14px;
   border:1px dashed #98775270;border-radius:6px;background:#fff5dc;color:#705738;font-size:15px;
@@ -608,15 +605,15 @@ body[data-lighting="unlit"] .encounter-screen{background:linear-gradient(#0b1534
 body[data-lighting="lit"] .encounter-screen{background:radial-gradient(ellipse at 47% 78%,#b1713673,#071021ed 77%),var(--encounter-art) center/cover}
 .encounter-screen[hidden]{display:none}
 .encounter-heading{grid-area:1 / 2;display:grid;justify-items:center;text-align:center;z-index:1;pointer-events:none}
-.encounter-heading h1{margin:0;color:#fff1cf;font:700 clamp(26px,3vw,42px) "Songti SC","SimSun",serif;letter-spacing:.1em;transform:translateY(17px);text-shadow:0 4px 18px #23160c}
+.encounter-heading h1{margin:0;color:#fff1cf;font:700 clamp(26px,3vw,42px) var(--font-body);letter-spacing:.1em;transform:translateY(17px);text-shadow:0 4px 18px #23160c}
 .encounter-layout{display:grid;grid-template-columns:minmax(0,1fr) clamp(138px,15vw,220px) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:4px clamp(8px,1.2vw,18px);align-items:start;min-height:0}
 .encounter-side{--side-tone:var(--tactical-ally);grid-area:1 / 1 / -1;display:grid;grid-template-rows:auto minmax(0,1fr);align-self:stretch;max-height:100%;min-width:0;padding:12px;border:1px solid color-mix(in srgb,var(--side-tone) 37%,var(--tactical-rule));border-radius:9px;background:var(--tactical-paper);box-shadow:var(--tactical-edge)}
 .encounter-side.opposing{--side-tone:var(--tactical-enemy);grid-column:3}
-.encounter-side h2{margin:0 0 10px;padding:1px 3px 8px;border-bottom:1px solid color-mix(in srgb,var(--side-tone) 33%,transparent);color:var(--side-tone);text-align:center;font:700 20px "Songti SC","SimSun",serif;letter-spacing:.08em}
+.encounter-side h2{margin:0 0 10px;padding:1px 3px 8px;border-bottom:1px solid color-mix(in srgb,var(--side-tone) 33%,transparent);color:var(--side-tone);text-align:center;font:700 20px var(--font-body);letter-spacing:.08em}
 .encounter-roster{--encounter-card-gap:9px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:var(--encounter-card-gap);overflow-y:auto;padding:5px;min-height:0;scrollbar-color:#a28452 transparent}
 .encounter-actions{grid-area:2 / 2;display:grid;gap:8px;align-self:center;padding:10px;border:1px solid var(--tactical-rule);border-radius:9px;background:var(--tactical-paper);box-shadow:var(--tactical-edge)}
 .encounter-deployment{display:grid;gap:7px;margin-top:5px;padding-top:12px;border-top:1px solid #b7a06a85}
-.encounter-actions button{min-height:36px;font:700 16px/1.2 "Songti SC","SimSun",serif;letter-spacing:.04em}
+.encounter-actions button{min-height:36px;font:700 16px/1.2 var(--font-body);letter-spacing:.04em}
 :is(.encounter-actions,.formation-dialog) .quiet{
   border-color:var(--tactical-rule);background:linear-gradient(#fffaec,#f3e5c7);color:var(--tactical-ink);
 }

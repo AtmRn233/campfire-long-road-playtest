@@ -3,6 +3,12 @@
     "name": "马",
     "size": "大型",
     "maxHp": 100,
+    "speed": 2,
+    "evade": 0,
+    "attack": {
+      "hit": 85,
+      "weapon": { "name": "蹄击", "range": "短", "damage": 45, "penetration": 0, "damageType": "bludgeoning" }
+    },
     "draft": {
       "armorType": "无甲",
       "armorName": "无",
