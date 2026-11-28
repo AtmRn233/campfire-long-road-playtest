@@ -4,7 +4,7 @@ export const heavyWoundRatio = .3;
 
 const sides = ["player","enemy"];
 const opposite = side => side === "player" ? "enemy" : "player";
-const onField = unit => unit.hp > 0 && unit.row !== "reserve";
+const onField = unit => unit.hp > 0 && !["reserve","undeployed","swallowed"].includes(unit.row);
 export const canFight = unit => onField(unit) && unit.morale !== whiteFlag;
 export const nearby = (a,b) => Math.abs(rankOf(a)-rankOf(b)) + Math.abs(a.column-b.column) === 1;
 export const isHeavilyWounded = unit => unit.hp <= unit.maxHp*heavyWoundRatio;
@@ -29,7 +29,7 @@ function mark(team, key, condition) {
 
 const outnumbered = (ours,theirs) => ours > 0 && theirs >= ours*2;
 
-export function settleMorale(state, event, report) {
+export function settleMorale(state, event, report, useResolve) {
   const teams = state.moraleTracking;
   const roundEnd = event.roundEnd;
   let losses = (event.fallen ?? []).map(unit=>({unit,routed:false}));
@@ -100,7 +100,8 @@ export function settleMorale(state, event, report) {
     const newLosses = [];
     for (const [unit,change] of affected) {
       selected.set(unit,change);
-      const level = Math.max(whiteFlag,Math.min(moraleLimit,original.get(unit)+change.delta));
+      const resolve = change.delta < 0 && unit.statuses?.resolve > 0 && original.get(unit) > whiteFlag;
+      const level = Math.max(whiteFlag,Math.min(moraleLimit,original.get(unit)+change.delta+Number(resolve)));
       if (level === unit.morale) continue;
       unit.morale = level;
       if (level === whiteFlag && !routedInEvent.has(unit.id)) {
@@ -113,7 +114,8 @@ export function settleMorale(state, event, report) {
     if (event.reinforced || event.roundEnd) event = {};
   }
   if (roundEnd) for (const side of sides) teams[side].outnumberedByLoss = false;
-  for (const [unit,{reason}] of selected) {
+  for (const [unit,{reason,delta}] of selected) {
+    if (delta < 0 && original.get(unit) > whiteFlag && unit.statuses?.resolve > 0) useResolve?.(unit);
     if (unit.morale !== original.get(unit)) report(unit,reason,original.get(unit));
   }
 }

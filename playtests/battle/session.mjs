@@ -1,5 +1,6 @@
 import { accuracyFor, action, armorDurability, assertAttack, attackOptions, catalog, chooseBattleAction, createBattle, defenseFor, drawWeather, effectiveAttribute, movementOptions, openColumn, orderedActors, reinforcementOptions, replaceBattleEquipment, retreatProblem, say } from "./battle.mjs";
 import { battleLogLines } from "./battleLog.mjs";
+import { controlledStatus } from "./statuses.mjs";
 
 export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math.random,weatherRoll=Math.random}={}) {
   const supplies = [];
@@ -26,7 +27,7 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
     return {
       ...publicState,weathers:catalog.weather,log:state.log.slice(),speeches:state.speeches.filter(line=>line.expiresAt>now),match,terrains:catalog.terrain,
       units:state.units.filter(unit=>!unit.arenaWithdrawn).map(unit=>{
-        const {dodge,meleeBlock,rangedBlock} = defenseFor(unit);
+        const {dodge,meleeBlock,rangedBlock} = defenseFor(unit,state);
         const counts = trackExperience && experience[unit.id];
         return {...unit,statuses:{...unit.statuses},dodge,meleeBlock,rangedBlock,
           ...(counts ? {battleExperience:{counts:{...counts},victory}} : {}),
@@ -98,8 +99,9 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
 
   function queueBot() {
     clearTimeout(botTimer);
+    const forced = state.phase === "player" && controlledStatus(orderedActors(state)[0]) === "confusion";
     if (state.busy || (state.phase !== "enemy" &&
-      !(state.autoBattle && ["player","reinforcement"].includes(state.phase)))) return;
+      !forced && !(state.autoBattle && ["player","reinforcement"].includes(state.phase)))) return;
     const game = state;
     botTimer = setTimeout(() => {
       if (state !== game) return;
@@ -143,7 +145,7 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
     const members = allies.map(unit => ({...unit,presetId:unit.id,id:"ally-" + encodeURIComponent(unit.id)}));
     state = createBattle(terrain?.id ?? "clearing",weatherId,supplies,{...player,presetId:player.id,id:"pc"},rosterProfiles,members,partyMemberIds,enemies,encounter,terrain?.ground);
     if (Number.isSafeInteger(ammo) && ammo >= 0) Object.assign(state,{ ammoLeft:ammo, ammoSpent:0 });
-    encounterMembers = [[player.id,"pc"],...allies.map((unit,i)=>[unit.id,members[i].id])];
+    encounterMembers = [[player.id,"pc"],...allies.flatMap((unit,i)=>unit.tamed ? [] : [[unit.id,members[i].id]])];
     if (encounter?.arena?.mode === "sparring") {
       for (const opponent of enemies ?? []) encounterMembers.push([opponent.id,opponent.id]);
     }
@@ -161,7 +163,7 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
     if (!unit) return null;
     return {
       unit, revision:state.rev, busy:state.busy,
-      locked:unit.side !== "player" || state.phase !== "setup" || ["training","sparring"].includes(state.encounter?.arena?.mode),
+      locked:unit.side !== "player" || unit.tamed || state.phase !== "setup" || ["training","sparring"].includes(state.encounter?.arena?.mode),
       usedItems:state.usedItems[id] ?? [], itemSwaps:state.itemSwaps[id] ?? [],
     };
   }
@@ -200,15 +202,28 @@ export function createBattleSession({delay=650,roll=Math.random,terrainRoll=Math
     const settlement = state.encounter?.persistentSpoils && state.settlement?.left ? state.settlement : null;
     const materials = settlement?.inventory.filter(item=>item.harvested).map(item=>({name:item.name,qty:item.quantity}));
     const corpses = settlement?.inventory.flatMap(item=>item.corpse ? [item.corpse.unit] : []);
-    const spoils = settlement && {
+    const trapLoot = state.settlement?.left ? state.settlement.inventory.filter(item=>item.recoveredTrap) : [];
+    const traps = [];
+    const remainingTraps = new Map(trapLoot.map(item=>[item.name,item.quantity]));
+    for (const name of state.encounter?.recoveredTraps ?? []) {
+      const quantity = remainingTraps.get(name) ?? 0;
+      if (quantity > 0) {
+        traps.push(name);
+        remainingTraps.set(name,quantity-1);
+      }
+    }
+    const spoils = (settlement || traps.length > 0) && {
       ...(materials?.length ? {materials} : {}),
       ...(corpses?.length ? {corpses} : {}),
-      items:settlement.inventory.flatMap(item=>item.source ? [{...item.source,current:item.current}] : []),
-      prisoners:settlement.entries.filter(entry=>entry.executed || entry.kind==="prisoner" && entry.disposition==="recruit")
+      ...(traps.length ? {traps} : {}),
+      items:settlement?.inventory.flatMap(item=>item.source ? [{...item.source,current:item.current}] : []) ?? [],
+      prisoners:(settlement?.entries ?? []).filter(entry=>entry.executed || entry.kind==="prisoner" && entry.disposition==="recruit")
         .map(entry=>({unit:entry.card.id,name:entry.card.name,outcome:entry.disposition === "recruit" ? "capture" : "execute",
           hp:entry.card.hp,durability:entry.durability,...(entry.executed ? {description:entry.executed} : {})})),
     };
+    const fallenTamed = state.fallen.filter(entry=>entry.card.tamed).map(entry=>entry.card.id);
     return {outcome,hp,...(encounterStarted ? {battleLog:battleLogLines(state.log)} : {}),
+      ...(fallenTamed.length ? {fallenTamed} : {}),
       ...(spoils ? {spoils} : {}),
       ...(state.peacefulExit ? {peacefulExit:true} : {}),...(Object.keys(experience).length ? {experience} : {}),
       ...(Object.keys(durability).length ? {durability} : {}),

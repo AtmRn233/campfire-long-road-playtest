@@ -15,6 +15,7 @@ export function createOpeningScreen({text,renderCard,send}) {
   let state;
   let storageKey;
   let presets = {};
+  let encounterPlan;
   let drafts;
   let width;
   let selected;
@@ -35,6 +36,7 @@ export function createOpeningScreen({text,renderCard,send}) {
     const wildMonster = encounter?.wildMonster === true;
     const arena = encounter?.arena;
     if (firstLoad) {
+      encounterPlan = undefined;
       storageKey = "campfire.formation." + key;
       presets = readPresets(storageKey);
       screen.style.setProperty("--encounter-art",'url("./art/' + state.terrain.id + '.webp")');
@@ -66,8 +68,9 @@ export function createOpeningScreen({text,renderCard,send}) {
     start.disabled = !canStart(state);
     if (start.disabled) start.title = "对方没有战斗人员";
     else start.removeAttribute("title");
+    const deployed = new Set(encounterPlan && rows.flatMap(([row])=>encounterPlan[row]));
     for (const [side,id] of [["player","encounter-friendly"],["enemy","encounter-hostile"]]) {
-      $(id).innerHTML = state.units.filter(unit=>unit.side===side)
+      $(id).innerHTML = state.units.filter(unit=>unit.side===side && (!unit.tamed || deployed.has(unit.id)))
         .map(unit=>renderCard(unit)).join("");
     }
   }
@@ -117,13 +120,26 @@ export function createOpeningScreen({text,renderCard,send}) {
         return '<section class="formation-rank' + (reserve ? ' formation-reserve' : '') + '"><h3>' + label +
           '<small>' + filled + (reserve ? ' 人' : ' / ' + capacity) + '</small></h3>' + content + '</section>';
       }).join("");
+    if (width === actualWidth()) {
+      const tamed = state.units.filter(unit=>unit.tamed);
+      if (tamed.length) {
+        const deployed = new Set(rows.flatMap(([row])=>plan[row]));
+        const waiting = tamed.filter(unit=>!deployed.has(unit.id));
+        board.insertAdjacentHTML("beforeend",'<section class="formation-rank formation-reserve" aria-label="待命魔物">' +
+          '<h3>待命魔物<small>' + waiting.length + ' 只</small></h3><div class="formation-reserve-slots">' +
+          waiting.map((unit,index)=>renderSlot("tamed","待命魔物",index,unit.id)).join("") +
+          (waiting.length < tamed.length ? '<button class="formation-slot formation-empty" type="button" ' +
+            'data-opening-row="tamed" data-opening-index="' + waiting.length + '">撤下魔物</button>' : '') +
+          '</div></section>');
+      }
+    }
     changeSelection();
   }
 
   function chooseWidth(value) {
     width = value;
     if (!drafts[width]) {
-      const saved = presets[width];
+      const saved = (width === actualWidth() && encounterPlan) || presets[width];
       drafts[width] = validFormation(state,width,saved) ? structuredClone(saved) : standardFormation(state,width);
     }
     for (const button of widthControl.querySelectorAll("button")) {
@@ -135,16 +151,32 @@ export function createOpeningScreen({text,renderCard,send}) {
   function place(row,index) {
     const plan = drafts[width];
     const from = rows.find(([name])=>plan[name].includes(selected))?.[0];
-    if (!from) return;
-    const origin = plan[from].indexOf(selected);
+    const joining = !from && state.units.some(unit=>unit.id===selected && unit.tamed);
+    if (!from && !joining) return;
+    const origin = from ? plan[from].indexOf(selected) : -1;
+    const fielded = [...plan.front,...plan.back].filter(Boolean).length;
+    if (row === "tamed") {
+      if (!from || !state.units.some(unit=>unit.id===selected && unit.tamed)) return;
+      if (from !== "reserve" && fielded === 1) {
+        note.hidden = false;
+        return;
+      }
+      plan[from][origin] = null;
+      paintEditor();
+      return;
+    }
     const other = plan[row][index];
     if (from === row && origin === index) return;
-    if (row === "reserve" && from !== "reserve" && !other && [...plan.front,...plan.back].filter(Boolean).length === 1) {
+    if (row === "reserve" && from && from !== "reserve" && !other && fielded === 1) {
       note.hidden = false;
       return;
     }
-    if (other) plan[from][origin] = other;
-    else plan[from][origin] = null;
+    if (from) plan[from][origin] = other ?? null;
+    else if (other && !state.units.find(unit=>unit.id===other)?.tamed) {
+      const vacant = plan.reserve.indexOf(null);
+      if (vacant < 0) plan.reserve.push(other);
+      else plan.reserve[vacant] = other;
+    }
     while (plan[row].length < index) plan[row].push(null);
     const placed = selected;
     plan[row][index] = placed;
@@ -171,7 +203,9 @@ export function createOpeningScreen({text,renderCard,send}) {
     const button = event.target.closest("button[data-opening-row]");
     if (!button) return;
     const {openingId,openingRow,openingIndex} = button.dataset;
-    if (!selected || selected === openingId) changeSelection(selected === openingId ? undefined : openingId);
+    if (!selected || selected === openingId || openingRow === "tamed" && openingId) {
+      changeSelection(selected === openingId ? undefined : openingId);
+    }
     else place(openingRow,Number(openingIndex));
   });
   editor.addEventListener("cancel",event => {
@@ -204,7 +238,12 @@ export function createOpeningScreen({text,renderCard,send}) {
     dragging = false;
   });
   $("save-formation").onclick = () => {
-    Object.assign(presets,drafts);
+    encounterPlan = drafts[actualWidth()];
+    const tamedIds = new Set(state.units.filter(unit=>unit.tamed).map(unit=>unit.id));
+    for (const [size,plan] of Object.entries(drafts)) {
+      const saved = Object.fromEntries(rows.map(([row])=>[row,plan[row].map(id=>tamedIds.has(id) ? null : id)]));
+      if (validFormation(state,Number(size),saved)) presets[size] = saved;
+    }
     try {
       localStorage.setItem(storageKey,JSON.stringify(presets));
       $("open-formation").removeAttribute("title");
@@ -231,7 +270,7 @@ export function createOpeningScreen({text,renderCard,send}) {
   $("withdraw-encounter").onclick = () => send({type:"encounterExit",decision:"retreat"});
   $("start-encounter").onclick = () => {
     if (!state || !canStart(state)) return;
-    const preset = presets[actualWidth()];
+    const preset = encounterPlan ?? presets[actualWidth()];
     if (editor.open) editor.close();
     if (choice.open) choice.close();
     send({type:"start",

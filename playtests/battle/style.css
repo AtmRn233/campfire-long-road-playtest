@@ -544,6 +544,7 @@ button.roll-key:hover,button.roll-key[aria-pressed="true"]{border-color:var(--st
 .item-copy{flex:1;min-width:0;overflow-wrap:anywhere}
 .victory-inventory strong{display:block;color:#4a321c;font-size:16px}
 .victory-inventory small{display:block;margin-top:3px;color:#6f5337;font-size:13px}
+.spoils-damage-badge{display:inline-block;padding:1px 4px;border:1px solid #b37a6d;border-radius:3px;background:#f2ded4;color:#813729;font-size:12px;font-weight:700}
 .victory-inventory b,.transfer-label{color:#865e24;font-size:14px;white-space:nowrap}
 .leave-dialog{padding:18px}
 .leave-dialog h2{color:var(--tactical-ink);font-size:20px}

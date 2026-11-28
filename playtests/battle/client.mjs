@@ -5,7 +5,7 @@ import defaultMounts from "../../data/rules/mounts.json" with { type: "json" };
 const weatherIds = ["clear", "cloudy", "lightRain", "heavyRain", "lightFog", "heavyFog", "wind", "lightSnow", "heavySnow", "darkness"];
 const terrainIds = ["grass", "farmland", "wood", "denseForest", "hill", "mountain", "snowMountain", "stream", "river", "lake", "marsh", "steppe", "desert", "village", "mine", "cave"];
 const weaponFields = {
-  range:"range", damage:"damage", penetration:"penetration", headBonus:"head_bonus",
+  range:"range", damage:"damage", damageType:"damage_type", penetration:"penetration", headBonus:"head_bonus",
   armorBonus:"armor_bonus", shieldBonus:"shield_bonus", largeBonus:"large_bonus", initiative:"initiative",
 };
 

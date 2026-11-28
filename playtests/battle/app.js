@@ -1,7 +1,9 @@
 import { moraleLabel, renderUnitCardContent, renderUnitHeadshot, renderUnitMeter, unitCardLevel, whiteFlag } from "./unitCard.mjs";
 import { battleParticipantGear, battleSession } from "./client.mjs?v=battle-help";
 import { weatherParticles, weatherSkyMarkup } from "../weatherVisual.mjs";
-import { battleSwapProblem, dodgeAfterAction, restorationTargets, battleProfileCombat, pendingCorpseAction, settlementItemKey, settlementProblem, trapPlacementOptions } from "./battle.mjs";
+import { battleItemOptions, battleSwapProblem, canPassRestrictedTurn, controllingSide, dodgeAfterAction, battleProfileCombat,
+  pendingCorpseAction, settlementItemKey, settlementProblem, wakeTargets } from "./battle.mjs";
+import { battleStatusNames, controlledStatus, forcedStatus, isAdverseStatus } from "./statuses.mjs";
 import { fieldSideOf } from "./grid.mjs";
 import { battleItemsBySlot } from "./loadout.mjs";
 import { createOpeningScreen } from "./opening.mjs?v=encounter-actions";
@@ -36,7 +38,6 @@ let selected = "roland";
 let reinforcementUnit;
 let aiming = false;
 let moving = false;
-let trapPlacement;
 let pointer;
 let sending = false;
 let lastStrike;
@@ -94,13 +95,14 @@ function portraitImage(unit,className="",source=portraitPath(unit),useSprite=tru
 }
 
 function cardPortrait(unit,className) {
+  if (unit.emoji) return '<span class="' + (className || "face") + ' portrait-placeholder" aria-hidden="true">' + text(unit.emoji) + '</span>';
   return renderUnitHeadshot(unit.name,unitPortraitSource(unit),unit.portraitCropKey ?? "roster:"+unit.id,className);
 }
-const battleStatusNames = {defend:"防御",dodge:"闪避",surprised:"措手不及"};
 const rowUnits = (side,row) => state.units.filter(unit=>fieldSideOf(unit) === side && unit.row === row).sort((a,b) => a.position-b.position);
 const gridColumn = (column) => state.lanes.indexOf(column) + 1;
-const canAct = (unit) => unit?.side === "player" && unit.morale !== whiteFlag && unit.row !== "reserve" && !unit.acted &&
-  state.phase === "player" && !state.autoBattle && !state.busy && state.order?.[0] === unit.id;
+const canAct = unit => unit && controllingSide(state,unit) === "player" && unit.morale !== whiteFlag && unit.row !== "reserve" &&
+  !unit.acted && state.phase === "player" && !state.autoBattle && !state.busy && state.order?.[0] === unit.id &&
+  controlledStatus(unit) !== "confusion";
 const targetValid = (unit, target) => canAct(unit) && state.attackTargets?.[unit.id]?.includes(target.id);
 const reachReason = () => state.attackBlocked?.[selected] || "目标不在攻击范围内。";
 
@@ -345,7 +347,6 @@ function receive(next) {
     selected = "roland";
     aiming = false;
     moving = false;
-    trapPlacement = undefined;
     lastStrike = null;
     meterHistory.clear();
     clearTimeout(victoryTimer);
@@ -370,9 +371,6 @@ function receive(next) {
     aiming = moving = false;
   }
   if (!canAct(byId(selected))) aiming = moving = false;
-  if (trapPlacement && (!canAct(byId(trapPlacement.actor)) || !byId(trapPlacement.actor).items.some(item=>item.trap && (item.key ?? item.name) === trapPlacement.item))) {
-    trapPlacement = undefined;
-  }
   if (byId(selected)?.moved) moving = false;
   if (frontier && previous?.phase === "setup" && state.phase === "ended") {
     reportToolbar();
@@ -469,7 +467,7 @@ function renderCard(unit,column,entry,preview=false,formationSlot) {
     renderUnitCardContent(unit,{
       portrait:cardPortrait(unit),
       badges:badges.length ? '<span class="portrait-statuses">' + badges.map(badge=>
-        '<span class="portrait-status' + (badge.id === "surprised" ? " adverse" : "") + '" title="' + text(describeBadge(badge)) + '">' +
+        '<span class="portrait-status' + (isAdverseStatus(badge.id) ? " adverse" : "") + '" title="' + text(describeBadge(badge)) + '">' +
         text(badge.name) + '<b>' + badge.turns + '</b></span>').join("") + '</span>' : "",
       field:fieldCard || inBattle,
       meterTrail:inBattle ? (kind,current,max)=>meterLoss(unit.id,kind,current,max) : undefined,
@@ -497,18 +495,11 @@ function renderRank(side,row) {
       '" data-deploy="' + row + '" aria-label="移入' + names[row] + '">＋<span>移入' + names[row] + '</span></button>';
   }
   const moves = moving ? state.movement[selected]?.destinations.filter(spot=>spot.fieldSide===side && spot.row===row) ?? [] : [];
-  const placing = trapPlacement ? trapPlacementOptions(state,byId(trapPlacement.actor)).filter(spot=>spot.fieldSide===side && spot.row===row) : [];
   const reinforcements = reinforcementUnit && side === "player" ? state.reinforcements.columns[row] : [];
   if (state.phase !== "setup") content += state.fieldColumns.slice(0,max).filter(column=>
     !units.some(unit=>unit.column===column) && !moves.some(spot=>spot.column===column) &&
-    !placing.some(spot=>spot.column===column) && !reinforcements.includes(column)
-  ).map(column=>{
-    const trap = state.traps.find(entry=>entry.fieldSide===side && entry.row===row && entry.column===column);
-    return '<span class="field-cell' + (trap ? ' trapped-field-cell' : '') + '" style="grid-column:' + gridColumn(column) +
-      (trap ? '" title="' + text(trap.name) + '" aria-label="' + text(trap.name) + '">⚙️' : '" aria-hidden="true">') + '</span>';
-  }).join("");
-  content += placing.map(({column})=>'<button type="button" class="slot trap-slot" style="grid-column:' + gridColumn(column) +
-    '" data-trap-column="' + column + '">布设在此</button>').join("");
+    !reinforcements.includes(column)
+  ).map(column=>'<span class="field-cell" style="grid-column:' + gridColumn(column) + '" aria-hidden="true"></span>').join("");
   content += moves.map(({column,controlled})=>{
     const slot = gridColumn(column);
     const target = (side === "player" ? "我方" : "敌方") + names[row] + "第 " + slot + " 格";
@@ -553,8 +544,11 @@ function renderBoard() {
   }).join("");
   const moveToReserve = canDeploy("player","reserve")
     ? '<button type="button" class="quiet" data-deploy="reserve">移入预备队</button>' : "";
-  $("enemy-reserves").innerHTML = reserves(theirs);
-  $("player-reserves").innerHTML = reserves(ours) + moveToReserve;
+  const swallowed = side => state.units.filter(unit=>unit.side===side && unit.row==="swallowed").map(unit=>
+    '<button type="button" class="reserve-unit" data-details="' + text(unit.id) + '">' +
+    text(unit.name + " · 被吞噬 " + unit.statuses.swallowed + " 回合") + '</button>').join("");
+  $("enemy-reserves").innerHTML = reserves(theirs) + swallowed("enemy");
+  $("player-reserves").innerHTML = reserves(ours) + swallowed("player") + moveToReserve;
   if (!aiming || (aimedEnemy && !byId(aimedEnemy))) setAimedEnemy();
   if (aiming && hover) {
     const card = document.elementFromPoint?.(hover.x,hover.y)?.closest(".out-of-range,.target");
@@ -629,9 +623,14 @@ function renderControls() {
   const retreat = $("retreat-action");
   const explanation = setup ? "布阵结束后才能行动。" : state.autoBattle ? "自动战斗中。" : state.busy ? "正在结算当前行动。" :
     unit?.side === "enemy" ? "敌方角色由系统控制。" : unit?.acted ? "该角色本轮已行动。" : "还没轮到该角色。";
-  attack.disabled = defend.disabled = dodge.disabled = !permitted;
-  $("unit-actions").querySelector("[data-skill]").disabled = !permitted;
-  $("unit-actions").querySelector("[data-items]").disabled = !permitted;
+  const restricted = permitted && forcedStatus(unit);
+  const pass = restricted && canPassRestrictedTurn(state,unit);
+  const skill = $("unit-actions").querySelector("[data-skill]");
+  attack.disabled = !permitted || Boolean(restricted && !state.attackTargets[selected]?.length);
+  defend.disabled = dodge.disabled = !permitted || Boolean(restricted);
+  skill.disabled = !permitted || Boolean(restricted && !pass);
+  skill.textContent = pass ? "结束行动" : "技能";
+  $("unit-actions").querySelector("[data-items]").disabled = !permitted || Boolean(restricted);
   move.disabled = !permitted || !state.movement[selected]?.destinations.length;
   attack.title = permitted ? "" : explanation;
   dodge.title = unit ? "闪避 " + unit.dodge + "% → " + dodgeAfterAction(unit.dodge) + "%" : "";
@@ -657,11 +656,11 @@ function blockDisplay({meleeBlock,rangedBlock}) {
 function showUnitStatDetails(anchor) {
   const unit = byId(inspectedUnit);
   if (!unit) return;
-  const detail = battleProfileCombat(unit,state.weather).profileStatSources[anchor.dataset.unitStat];
+  const detail = battleProfileCombat(unit,state.weather,state).profileStatSources[anchor.dataset.unitStat];
   if (!detail) return;
   const panel = $("unit-stat-details");
   panel.innerHTML = '<strong>' + text(detail.title) + '</strong>' + detail.rows.map(([label,value])=>
-    '<div><span>' + text(label) + '</span><b>' + text(value) + '</b></div>').join("") +
+    '<div><span>' + text(label) + '</span><b data-stat-value="' + text(Number.parseFloat(value)) + '">' + text(value) + '</b></div>').join("") +
     '<p>' + text(detail.total) + '</p>' + (detail.note ? '<small>' + text(detail.note) + '</small>' : "");
   panel.hidden = false;
   positionTooltip(anchor,panel);
@@ -670,7 +669,7 @@ function showUnitStatDetails(anchor) {
 function showProfile(unit) {
   const source = unitPortraitSource(unit);
   const original = portraitImage(unit,"unit-profile-portrait",source?.url,source?.columns > 1);
-  const profile = {...unit, ...battleProfileCombat(unit,state.weather),
+  const profile = {...unit, ...battleProfileCombat(unit,state.weather,state),
     ...(unit.monster ? {monsterCategory:unit.raceName ?? "",bodyLabel:unit.size} : {}),
     profileMorale:moraleLabel(unit.morale),
     profileStatuses:Object.entries(unit.statuses).map(([id,turns])=>
@@ -762,28 +761,34 @@ function carriedIcon(item, fallback) {
 }
 
 function equipmentPotions(unit) {
-  const potions = canAct(unit) ? unit.items.filter(item=>item.restore).map(item=>{
-    const {resource,dice,icon} = item.restore;
-    const targets = restorationTargets(state,unit,item);
+  if (!canAct(unit) || forcedStatus(unit)) return "";
+  const potions = unit.items.filter(item=>!item.trap && (item.restore || item.battleUse)).map(item=>{
+    const {resource,dice,icon} = item.restore ?? {};
+    const {targets,all,reason} = battleItemOptions(state,unit,item);
     const label = resource === "hp" ? "生命" : "魔力";
     const options = targets.map(target=>{
-      const value = resource === "hp" ? target.hp + " / " + target.maxHp : fraction(target.magic);
+      const value = resource === "hp" ? target.hp + " / " + target.maxHp :
+        resource === "mana" && target.magic ? fraction(target.magic) : "";
       return '<option value="' + text(target.id) + '"' + (target.id === unit.id ? ' selected' : '') + '>' +
-        text(target.name + " · " + value) + '</option>';
+        text(target.name + (value ? " · " + value : "")) + '</option>';
     }).join("");
-    const name = item.name + " ×" + item.qty;
-    return '<form class="use-potion" data-use-potion="' + text(item.key ?? item.name) + '">' +
-      '<span>' + carriedIcon(item,icon ?? "🧪") + text(name) +
-      '<small>恢复 ' + text(dice) + ' 点' + label + '</small></span>' +
+    const rule = item.battleUse;
+    const effects = [
+      ...(dice ? ["恢复 " + dice + " 点" + label] : []),
+      ...(rule?.apply ? [rule.apply.status + " " + rule.apply.turns + " 回合"] : []),
+      ...(rule?.damage ? [rule.damage.amount + " 点伤害"] : []),
+      ...(rule?.cleanse?.length ? ["解除" + rule.cleanse.join("、")] : []),
+    ].join(" · ");
+    const recipient = all ? '<span>' + (rule.target === "allies" ? "全体队友" : "全体敌人") + '</span>' :
       '<select name="recipient" aria-label="' + text(item.name + "使用对象") + '"' +
-      (targets.length ? '' : ' disabled') + '>' + (options || '<option>无可用对象</option>') + '</select>' +
-      '<button type="submit"' + (targets.length ? '' : ' disabled') + '>使用</button></form>';
-  }).join("") : "";
-  const traps = canAct(unit) ? unit.items.filter(item=>item.trap).map(item=>
-    '<div class="use-potion"><span>' + carriedIcon(item,"⚙️") + text(item.name + " ×" + item.qty) +
-    '</span><span>伤害 ' + text(item.trap.damage) + '</span><button type="button" data-place-trap="' +
-    text(item.key ?? item.name) + '"' + (trapPlacementOptions(state,unit).length ? '' : ' disabled') + '>布设</button></div>').join("") : "";
-  return potions || traps ? '<div class="battle-potions" aria-label="使用随身道具">' + potions + traps +
+      (targets.length ? '' : ' disabled') + '>' + (options || '<option>' + text(reason || "无可用对象") + '</option>') + '</select>';
+    return '<form class="use-potion" data-use-potion="' + text(item.key ?? item.name) + '">' +
+      '<span>' + carriedIcon(item,icon ?? (item.restore ? "🧪" : undefined)) + text(item.name + " ×" + item.qty) +
+      '<small>' + text(effects) + '</small></span>' + recipient +
+      '<button type="submit"' + (targets.length ? '' : ' disabled') + (reason ? ' title="' + text(reason) + '"' : '') +
+      '>使用</button></form>';
+  }).join("");
+  return potions ? '<div class="battle-potions" aria-label="使用随身道具">' + potions +
     '<small>使用道具会结束本轮行动。</small></div>' : "";
 }
 
@@ -805,6 +810,17 @@ function updateUnitDetails() {
   tabs.hidden = monster;
   const view = $("unit-view");
   const worldBook = $("unit-world-book");
+  let wake = dialog.querySelector("button[data-wake]");
+  if (!wake) {
+    wake = document.createElement("button");
+    wake.type = "button";
+    wake.className = "quiet";
+    wake.dataset.wake = "";
+    wake.textContent = "唤醒";
+    worldBook.after(wake);
+  }
+  const actor = byId(state.order[0]);
+  wake.hidden = !canAct(actor) || !wakeTargets(state,actor).includes(unit);
   const monsterId = monster && (unit.monster.corpse?.monsterId ?? state.encounter?.monsterProfileId);
   worldBook.hidden = !monsterId;
   if (monsterId) {
@@ -944,7 +960,7 @@ function rollAxis(accuracy) {
 }
 
 function sumOfTerms(terms,unit = "%") {
-  return terms.filter(([,value])=>value).map(([label,value],index)=>
+  return terms.filter(([,value,showZero])=>value || showZero).map(([label,value],index)=>
     (value < 0 ? (index ? " − " : "− ") : (index ? " + " : "")) + label + " " + Math.abs(value) + unit
   ).join("");
 }
@@ -963,6 +979,7 @@ function accuracyPanels(accuracy,skillName) {
   const factors = [[accuracy.attribute,accuracy.adjustment],["寸长寸强",accuracy.weaponMatchup],["反大",accuracy.largeBonus],
     ["夹击",accuracy.flankingHit],[skillName ? "技能「" + skillName + "」" : "技能命中",accuracy.skillHit],
     ["优势地形",accuracy.terrainHit],["攻击者士气",accuracy.moraleHit],["天气" + (accuracy.weatherName ? "·" + accuracy.weatherName : ""),accuracy.weatherHit],
+    ...(accuracy.hitModifiers ?? []),
     ["目标闪避",-accuracy.dodge],["目标格挡",-accuracy.block]].sort((a,b)=>
       Number(b[1]>0)-Number(a[1]>0) || Math.abs(b[1] ?? 0)-Math.abs(a[1] ?? 0));
   const raw = factors.reduce((total,[,value])=>total + (value || 0),accuracy.base);
@@ -974,26 +991,31 @@ function accuracyPanels(accuracy,skillName) {
   const activeDodge = accuracy.activeDodge ?? 0;
   const attributeDodge = accuracy.attributeDodge ?? accuracy.dodge-accuracy.moraleDodge-activeDodge;
   const rawDodge = attributeDodge + accuracy.moraleDodge;
+  const dodgeModifiers = accuracy.dodgeModifiers ?? [];
   const dodgeLines = [];
   if (rawDodge<0) dodgeLines.push(["应用最低 0%","基础闪避 0%"]);
-  if (activeDodge || accuracy.terrainDodge) dodgeLines.push([sumOfTerms([
-    ["基础闪避",Math.max(0,rawDodge)],["主动闪避",activeDodge],["优势地形",accuracy.terrainDodge],
+  const extraDodge = activeDodge || accuracy.terrainDodge || dodgeModifiers.length;
+  if (extraDodge) dodgeLines.push([sumOfTerms([
+    ["基础闪避",Math.max(0,rawDodge),true],["主动闪避",activeDodge],["优势地形",accuracy.terrainDodge],...dodgeModifiers,
   ]),"合计闪避修正 " + accuracy.dodge + "%"]);
   const dodge = accuracy.dodgeLimit > accuracy.blockLimit ? subpanel("dodge",
     sumOfTerms([[accuracy.dodgeSource ?? "目标敏捷",attributeDodge],["目标士气",accuracy.moraleDodge]]) || "0%",
-    (rawDodge<0 ? "修正合计 " + rawDodge : (activeDodge || accuracy.terrainDodge) ? "基础闪避 " + rawDodge : "合计闪避修正 " + accuracy.dodge) + "%",dodgeLines) : "";
+    (rawDodge<0 ? "修正合计 " + rawDodge : extraDodge ? "基础闪避 " + rawDodge : "合计闪避修正 " + accuracy.dodge) + "%",dodgeLines) : "";
   const baseBlock = accuracy.baseBlock ?? 0;
   const shieldBonus = accuracy.shieldBonus ?? 0;
   const block = accuracy.blockLimit > accuracy.chance ? subpanel("block",
-    sumOfTerms([["基础格挡",baseBlock],["盾牌加成",shieldBonus],["主动防御",accuracy.guarding ? baseBlock+shieldBonus : 0]]),
+    sumOfTerms([["基础格挡",baseBlock],["盾牌加成",shieldBonus],["主动防御",accuracy.guarding ? baseBlock+shieldBonus : 0],["盾阵",accuracy.shieldWall]]),
     "合计格挡修正 " + accuracy.block + "%") : "";
   return detailSection("hit","命中率",lines,block + dodge);
 }
 
-function attackDamagePanel({weaponDamage,strengthPercent,adjustedDamage,largeBonus,attack}) {
+function attackDamagePanel({weaponDamage,strengthPercent,baseAdjustedDamage = weaponDamage,adjustedDamage,damageModifiers = [],largeBonus,attack,untypedAttack = attack}) {
   const source = "武器 " + weaponDamage;
-  const lines = strengthPercent ? [[source + " × 力量 " + (100+strengthPercent) + "%",String(adjustedDamage)]] : [[source]];
-  if (largeBonus) lines.push([adjustedDamage + " × 反大 " + (100+largeBonus) + "%",String(attack)]);
+  const lines = strengthPercent ? [[source + " × 力量 " + (100+strengthPercent) + "%",String(baseAdjustedDamage)]] : [[source]];
+  if (damageModifiers.length)
+    lines.push([baseAdjustedDamage + " × (" + sumOfTerms([["基础",100],...damageModifiers]) + ")",String(adjustedDamage)]);
+  if (largeBonus) lines.push([adjustedDamage + " × 反大 " + (100+largeBonus) + "%",String(untypedAttack)]);
+  if (untypedAttack !== attack) lines.push(["应用伤害抗性或易伤",String(attack)]);
   return detailSection("damage","攻击伤害",lines);
 }
 
@@ -1047,11 +1069,13 @@ function damagePanels(detail) {
   if (damage.overflow && damage.armorAbsorbed) healthLines.push(["护甲分摊 " + penetration.armorDamage +
     " − 护甲挡下 " + damage.armorAbsorbed,"护甲溢出 " + damage.overflow]);
   const components = sumOfTerms([["穿甲直伤",penetration.direct],["护甲溢出",damage.overflow]],"");
-  const healthCapped = damage.hpLoss < damage.hpDamage;
+  const stone = damage.stoneReduction ?? 0;
+  const healthCapped = damage.hpLoss < damage.hpDamage - stone;
   if (components) {
     const expression = head ? "(" + components + ") × 爆头 " + damage.multiplier + " 倍（四舍五入）" : components;
-    healthLines.push([expression,(healthCapped ? "理论扣血 " + damage.hpDamage : "实际扣血 " + damage.hpLoss)]);
+    healthLines.push([expression,(healthCapped || stone ? "理论扣血 " + damage.hpDamage : "实际扣血 " + damage.hpLoss)]);
   } else healthLines.push(["实际扣血 0"]);
+  if (stone) healthLines.push(["石肤减少 " + stone + " 点伤害", (healthCapped ? "减伤后 " : "实际扣血 ") + (damage.hpDamage - stone)]);
   if (healthCapped) healthLines.push(["目标剩余血量 " + damage.hpBefore + "，实际扣血 " + damage.hpLoss]);
   return location + calculation + detailSection("block","护甲伤害",armorLines) + detailSection("health","血量伤害",healthLines);
 }
@@ -1337,7 +1361,8 @@ function canSettle(entry,command) {
 }
 
 function inventoryItem(item) {
-  return '<span class="item-copy"><strong>' + text(item.name) + '</strong><small>' + text(item.kind) +
+  const badge = item.max > 0 && item.current <= 0 ? ' <span class="spoils-damage-badge">损坏</span>' : '';
+  return '<span class="item-copy"><strong>' + text(item.name) + badge + '</strong><small>' + text(item.kind) +
     (item.max === undefined ? '' : ' · 耐久 ' + item.current + ' / ' + item.max) + '</small></span><b>×' + item.quantity + '</b>';
 }
 
@@ -1790,35 +1815,37 @@ document.addEventListener("click",(event) => {
     const {fieldSide,fieldRow} = button.closest("[data-field-side]").dataset;
     return send({type:"move",actor:selected,fieldSide,row:fieldRow,column:Number(button.dataset.moveColumn)});
   }
-  if (button.hasAttribute("data-trap-column") && trapPlacement && canAct(byId(trapPlacement.actor))) {
-    const {fieldSide,fieldRow} = button.closest("[data-field-side]").dataset;
-    const {actor,item} = trapPlacement;
-    trapPlacement = undefined;
-    return send({type:"placeTrap",actor,item,fieldSide,row:fieldRow,column:Number(button.dataset.trapColumn)});
-  }
   if (button.dataset.deploy) {
     return send({type:"deploy",actor:selected,row:button.dataset.deploy});
   }
   if (button.hasAttribute("data-start")) return send({type:"start"});
   if (button.hasAttribute("data-reset")) return send({type:"reset"});
   if (button.hasAttribute("data-retreat") && canAct(byId(selected))) return send({type:"retreat",actor:selected});
-  if (button.hasAttribute("data-skill")) return setNotice(byId(selected).name + "暂无可用技能。");
+  if (button.hasAttribute("data-wake")) {
+    const actor = byId(state.order[0]);
+    if (!canAct(actor) || !wakeTargets(state,actor).some(unit=>unit.id===inspectedUnit)) return;
+    const target = inspectedUnit;
+    $("unit-dialog").close();
+    return send({type:"wake",actor:actor.id,target});
+  }
+  if (button.hasAttribute("data-skill")) {
+    const actor = byId(selected);
+    if (canAct(actor) && canPassRestrictedTurn(state,actor)) return send({type:"passRestrictedTurn",actor:selected});
+    return setNotice(actor.name + "暂无可用技能。");
+  }
   if (button.hasAttribute("data-items")) return showUnitDetails(selected,"equipment");
   if ((button.hasAttribute("data-defend") || button.hasAttribute("data-dodge")) && canAct(byId(selected))) {
-    trapPlacement = undefined;
     aiming = false;
     moving = false;
     return send({type:button.hasAttribute("data-dodge") ? "dodge" : "defend",actor:selected});
   }
   if (button.hasAttribute("data-aim") && canAct(byId(selected))) {
-    trapPlacement = undefined;
     aiming = !aiming;
     moving = false;
     setNotice(aiming && !state.attackTargets[selected].length ? reachReason() : "");
     render();
   }
   if (button.hasAttribute("data-move") && canAct(byId(selected))) {
-    trapPlacement = undefined;
     moving = !moving;
     aiming = false;
     setNotice(moving ? "选择空格移动，进入敌方近战的控制区即停。" : "");
@@ -1875,23 +1902,13 @@ $("unit-view").addEventListener("submit",event => {
   event.preventDefault();
   const unit = byId(inspectedUnit);
   if (!canAct(unit)) return;
-  const target = String(new FormData(form).get("recipient") ?? "");
-  if (!target) return;
+  const target = form.elements.namedItem("recipient")?.value;
+  if (form.elements.namedItem("recipient") && !target) return;
   $("unit-dialog").close();
   send({type:"item",actor:unit.id,target,item:form.dataset.usePotion});
 });
 $("unit-view").addEventListener("click",event => {
   const unit = byId(inspectedUnit);
-  const trapButton = event.target.closest("button[data-place-trap]");
-  if (trapButton && canAct(unit) && trapPlacementOptions(state,unit).length) {
-    trapPlacement = {actor:unit.id,item:trapButton.dataset.placeTrap};
-    selected = unit.id;
-    aiming = moving = false;
-    $("unit-dialog").close();
-    setNotice("选择相邻空格布设陷阱，按 Esc 取消。");
-    render();
-    return;
-  }
   if (unit && event.target.closest("button[data-portrait-view]")) {
     void portraitViewer.open(unit,unitPortraitSource(unit));
     return;
@@ -1945,12 +1962,6 @@ for (const type of ["pointerout","focusout"]) {
   });
 }
 document.addEventListener("keydown",(event) => {
-  if (event.key === "Escape" && trapPlacement && !$("unit-dialog").open) {
-    trapPlacement = undefined;
-    setNotice();
-    render();
-    return;
-  }
   if (event.key === "Escape" && !$("unit-dialog").open && !$("battle-record-dialog").open) {
     if (battleOptions.open) {
       battleOptions.open = false;
